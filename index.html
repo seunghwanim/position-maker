@@ -8,21 +8,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --green:      #1a7a3c;
-      --green-mid:  #22923f; /* slightly lighter than --green for midfield zone */
-      --green-light:#2cb552;
-      --line:       rgba(255,255,255,0.55);
-      --accent:     #f5c518;
-      --accent2:    #ff6b35;
-      --bg:         #0d1117;
-      --card:       rgba(255,255,255,0.06);
-      --text:       #f0f0f0;
-      --muted:      #8b9ab0;
-      --radius:     12px;
+      --green:       #1a7a3c;
+      --green-light: #2cb552;
+      --accent:      #f5c518;
+      --accent2:     #ff6b35;
+      --bg:          #0d1117;
+      --card:        rgba(255,255,255,0.06);
+      --text:        #f0f0f0;
+      --muted:       #8b9ab0;
+      --radius:      12px;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       background: var(--bg);
       color: var(--text);
@@ -30,7 +26,6 @@
       min-height: 100vh;
       padding: 24px 16px 60px;
     }
-
     h1 {
       font-family: 'Black Han Sans', sans-serif;
       font-size: clamp(1.6rem, 5vw, 2.4rem);
@@ -39,14 +34,9 @@
       color: var(--accent);
       margin-bottom: 4px;
     }
-    .subtitle {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.85rem;
-      margin-bottom: 28px;
-    }
+    .subtitle { text-align: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 28px; }
 
-    /* ── API Key section ── */
+    /* API Key */
     .api-section {
       background: var(--card);
       border: 1px solid rgba(255,255,255,0.1);
@@ -55,16 +45,8 @@
       max-width: 600px;
       margin: 0 auto 24px;
     }
-    .api-section label {
-      font-size: 0.8rem;
-      color: var(--muted);
-      display: block;
-      margin-bottom: 8px;
-    }
-    .api-row {
-      display: flex;
-      gap: 10px;
-    }
+    .api-section label { font-size: 0.8rem; color: var(--muted); display: block; margin-bottom: 8px; }
+    .api-row { display: flex; gap: 10px; }
     .api-section input {
       flex: 1;
       background: rgba(255,255,255,0.08);
@@ -78,82 +60,49 @@
     }
     .api-section input:focus { border-color: var(--accent); }
     .btn-save {
-      background: var(--accent);
-      color: #000;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 18px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      white-space: nowrap;
+      background: var(--accent); color: #000; font-weight: 700;
+      border: none; border-radius: 8px; padding: 10px 18px;
+      cursor: pointer; font-size: 0.9rem; white-space: nowrap;
     }
     .btn-save:hover { background: #e0b014; }
 
-    /* ── Roster input ── */
-    .roster-section {
-      max-width: 600px;
-      margin: 0 auto 28px;
-    }
+    /* Roster */
+    .roster-section { max-width: 600px; margin: 0 auto 28px; }
     .roster-section h2 {
       font-family: 'Black Han Sans', sans-serif;
-      font-size: 1.1rem;
-      color: var(--accent2);
-      margin-bottom: 12px;
+      font-size: 1.1rem; color: var(--accent2); margin-bottom: 12px;
     }
     .player-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 10px;
-      margin-bottom: 16px;
+      gap: 10px; margin-bottom: 16px;
     }
     .player-chip {
       background: var(--card);
       border: 1.5px solid rgba(255,255,255,0.12);
-      border-radius: 8px;
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      transition: border-color .2s, background .2s;
-      font-size: 0.9rem;
-      user-select: none;
+      border-radius: 8px; padding: 10px 12px;
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; transition: border-color .2s, background .2s;
+      font-size: 0.9rem; user-select: none;
     }
     .player-chip input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
     .player-chip:hover { border-color: var(--accent); }
     .player-chip.selected { border-color: var(--green-light); background: rgba(44,181,82,0.12); }
-
-    .selected-count {
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
+    .selected-count { font-size: 0.82rem; color: var(--muted); margin-bottom: 14px; }
     .selected-count span { color: var(--accent); font-weight: 700; }
-
     .btn-generate {
       width: 100%;
       background: linear-gradient(135deg, var(--green), var(--green-light));
-      color: #fff;
-      font-family: 'Black Han Sans', sans-serif;
-      font-size: 1.1rem;
-      border: none;
-      border-radius: var(--radius);
-      padding: 16px;
-      cursor: pointer;
-      letter-spacing: 1px;
+      color: #fff; font-family: 'Black Han Sans', sans-serif;
+      font-size: 1.1rem; border: none; border-radius: var(--radius);
+      padding: 16px; cursor: pointer; letter-spacing: 1px;
       transition: opacity .2s, transform .1s;
     }
     .btn-generate:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
     .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* ── Loading ── */
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: var(--muted);
-      display: none;
-    }
+    /* Loading */
+    .loading { text-align: center; padding: 40px; color: var(--muted); display: none; }
     .spinner {
       width: 44px; height: 44px;
       border: 4px solid rgba(255,255,255,0.1);
@@ -162,155 +111,127 @@
       animation: spin 0.8s linear infinite;
       margin: 0 auto 16px;
     }
+    .loading-step { font-size: 0.85rem; margin-top: 8px; color: var(--accent); }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Quarters tabs ── */
+    /* Quarter tabs */
     .quarters-nav {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      margin: 32px 0 20px;
-      flex-wrap: wrap;
+      display: flex; gap: 8px; justify-content: center;
+      margin: 32px 0 20px; flex-wrap: wrap;
     }
     .quarter-tab {
       background: var(--card);
       border: 1.5px solid rgba(255,255,255,0.12);
-      border-radius: 30px;
-      padding: 8px 22px;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: 600;
-      transition: all .2s;
+      border-radius: 30px; padding: 8px 22px;
+      color: var(--muted); cursor: pointer;
+      font-size: 0.9rem; font-weight: 600; transition: all .2s;
     }
-    .quarter-tab.active {
-      background: var(--accent);
-      color: #000;
-      border-color: var(--accent);
-    }
+    .quarter-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
-    /* ── Pitch ── */
-    .pitch-wrapper {
-      max-width: 420px;
-      margin: 0 auto;
-    }
-
+    /* Pitch */
+    .pitch-wrapper { max-width: 420px; margin: 0 auto; }
     .pitch {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 0.65;
-      background: var(--green);
-      border-radius: 10px;
-      overflow: hidden;
+      position: relative; width: 100%; aspect-ratio: 0.65;
+      background: var(--green); border-radius: 10px; overflow: hidden;
       border: 3px solid rgba(255,255,255,0.2);
       box-shadow: 0 8px 40px rgba(0,0,0,0.6);
     }
-
-    /* Grass stripes */
     .pitch::before {
-      content: '';
-      position: absolute; inset: 0;
+      content: ''; position: absolute; inset: 0;
       background: repeating-linear-gradient(
-        180deg,
-        transparent 0px, transparent 40px,
+        180deg, transparent 0px, transparent 40px,
         rgba(0,0,0,0.07) 40px, rgba(0,0,0,0.07) 80px
       );
     }
-
-    /* Field markings */
-    .field-lines {
-      position: absolute; inset: 0;
-    }
-    .field-lines svg {
-      width: 100%; height: 100%;
-    }
-
-    /* Player nodes */
+    .field-lines { position: absolute; inset: 0; }
+    .field-lines svg { width: 100%; height: 100%; }
     .player-node {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      z-index: 10;
+      position: absolute; transform: translate(-50%, -50%);
+      display: flex; flex-direction: column; align-items: center;
+      gap: 4px; z-index: 10;
     }
     .player-circle {
-      width: 38px; height: 38px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.6rem;
-      font-weight: 700;
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.58rem; font-weight: 700;
       border: 2px solid rgba(255,255,255,0.8);
       box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-      letter-spacing: -0.5px;
-      text-align: center;
-      line-height: 1.1;
+      text-align: center; line-height: 1.2;
     }
-    .player-circle.gk     { background: #f5c518; color: #000; }
-    .player-circle.def    { background: #1a5fa8; color: #fff; }
-    .player-circle.mid    { background: #6b3fa0; color: #fff; }
-    .player-circle.att    { background: #cc2936; color: #fff; }
-
+    .player-circle.gk  { background: #f5c518; color: #000; }
+    .player-circle.def { background: #1a5fa8; color: #fff; }
+    .player-circle.mid { background: #6b3fa0; color: #fff; }
+    .player-circle.att { background: #cc2936; color: #fff; }
     .player-name {
-      background: rgba(0,0,0,0.72);
-      color: #fff;
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
+      background: rgba(0,0,0,0.75); color: #fff;
+      font-size: 0.68rem; font-weight: 700;
+      padding: 2px 6px; border-radius: 4px;
       white-space: nowrap;
-      max-width: 80px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .pos-label {
-      font-size: 0.58rem;
-      color: rgba(255,255,255,0.7);
-      font-weight: 600;
     }
 
-    /* ── AI Reasoning box ── */
-    .reasoning-box {
-      max-width: 420px;
-      margin: 20px auto 0;
+    /* Play time table */
+    .playtime-box {
+      max-width: 420px; margin: 20px auto 0;
       background: var(--card);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: var(--radius);
       padding: 16px 18px;
-      font-size: 0.82rem;
-      color: var(--muted);
-      line-height: 1.7;
-      white-space: pre-wrap;
     }
-    .reasoning-box h3 {
-      font-size: 0.78rem;
-      color: var(--accent);
-      margin-bottom: 8px;
+    .playtime-box h3 {
       font-family: 'Black Han Sans', sans-serif;
-      letter-spacing: 1px;
+      font-size: 0.85rem; color: var(--accent);
+      margin-bottom: 12px; letter-spacing: 1px;
+    }
+    .playtime-grid {
+      display: grid;
+      grid-template-columns: 1fr repeat(5, auto);
+      gap: 4px 10px; align-items: center;
+      font-size: 0.78rem;
+    }
+    .playtime-grid .hdr { color: var(--muted); font-weight: 700; text-align: center; padding-bottom: 6px; }
+    .playtime-grid .pname { color: var(--text); padding: 3px 0; }
+    .playtime-grid .cell { text-align: center; padding: 3px 0; }
+    .cell.played  { color: var(--green-light); font-weight: 700; }
+    .cell.gk-q    { color: var(--accent); font-weight: 700; font-size: 0.7rem; }
+    .cell.resting { color: rgba(255,255,255,0.2); }
+    .total-chip {
+      display: inline-block;
+      background: var(--green);
+      color: #fff; font-weight: 700;
+      border-radius: 4px; padding: 1px 6px;
+      font-size: 0.72rem;
     }
 
-    /* ── Error ── */
+    /* Reasoning */
+    .reasoning-box {
+      max-width: 420px; margin: 16px auto 0;
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      font-size: 0.82rem; color: var(--muted);
+      line-height: 1.7; white-space: pre-wrap;
+    }
+    .reasoning-box h3 {
+      font-size: 0.78rem; color: var(--accent);
+      margin-bottom: 8px;
+      font-family: 'Black Han Sans', sans-serif; letter-spacing: 1px;
+    }
+
+    /* Error */
     .error-box {
-      max-width: 600px;
-      margin: 20px auto;
+      max-width: 600px; margin: 20px auto;
       background: rgba(204,41,54,0.15);
       border: 1px solid rgba(204,41,54,0.4);
       border-radius: var(--radius);
-      padding: 14px 18px;
-      font-size: 0.88rem;
-      color: #ff8080;
-      display: none;
+      padding: 14px 18px; font-size: 0.88rem; color: #ff8080; display: none;
     }
   </style>
 </head>
 <body>
 
 <h1>⚽ 포지션 메이커</h1>
-<p class="subtitle">4-2-3-1 포메이션 · AI 자동 배치</p>
+<p class="subtitle">4-2-3-1 포메이션 · AI 자동 배치 · 균등 출전</p>
 
 <!-- API Key -->
 <div class="api-section">
@@ -321,11 +242,11 @@
   </div>
 </div>
 
-<!-- Roster selector -->
+<!-- Roster -->
 <div class="roster-section">
   <h2>📋 오늘 출전 선수 선택</h2>
   <div class="player-grid" id="playerGrid"></div>
-  <p class="selected-count">선택된 선수: <span id="selectedCount">0</span>명 (11명 필요)</p>
+  <p class="selected-count">선택된 선수: <span id="selectedCount">0</span>명 (최소 11명)</p>
   <button class="btn-generate" id="generateBtn" disabled onclick="generateFormation()">
     🤖 AI 포지션 짜기
   </button>
@@ -336,35 +257,37 @@
 <!-- Loading -->
 <div class="loading" id="loading">
   <div class="spinner"></div>
-  <p>AI가 포지션을 분석 중입니다...</p>
+  <p>AI가 4쿼터 포지션을 분석 중입니다...</p>
+  <p class="loading-step" id="loadingStep"></p>
 </div>
 
 <!-- Quarter tabs -->
 <div class="quarters-nav" id="quartersNav" style="display:none"></div>
 
-<!-- Pitch -->
+<!-- Pitch + tables -->
 <div class="pitch-wrapper" id="pitchWrapper" style="display:none">
   <div class="pitch" id="pitch">
     <div class="field-lines">
       <svg viewBox="0 0 100 154" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Center line -->
         <line x1="0" y1="77" x2="100" y2="77" stroke="rgba(255,255,255,0.5)" stroke-width="0.5"/>
-        <!-- Center circle -->
         <circle cx="50" cy="77" r="12" stroke="rgba(255,255,255,0.5)" stroke-width="0.5" fill="none"/>
         <circle cx="50" cy="77" r="0.8" fill="rgba(255,255,255,0.5)"/>
-        <!-- Penalty box top -->
         <rect x="18" y="0" width="64" height="22" stroke="rgba(255,255,255,0.5)" stroke-width="0.5" fill="none"/>
         <rect x="34" y="0" width="32" height="11" stroke="rgba(255,255,255,0.5)" stroke-width="0.5" fill="none"/>
-        <!-- Penalty box bottom (our side) -->
         <rect x="18" y="132" width="64" height="22" stroke="rgba(255,255,255,0.5)" stroke-width="0.5" fill="none"/>
         <rect x="34" y="143" width="32" height="11" stroke="rgba(255,255,255,0.5)" stroke-width="0.5" fill="none"/>
-        <!-- Corner arcs -->
         <path d="M0,0 Q4,0 4,4" stroke="rgba(255,255,255,0.4)" stroke-width="0.5" fill="none"/>
         <path d="M100,0 Q96,0 96,4" stroke="rgba(255,255,255,0.4)" stroke-width="0.5" fill="none"/>
         <path d="M0,154 Q4,154 4,150" stroke="rgba(255,255,255,0.4)" stroke-width="0.5" fill="none"/>
         <path d="M100,154 Q96,154 96,150" stroke="rgba(255,255,255,0.4)" stroke-width="0.5" fill="none"/>
       </svg>
     </div>
+  </div>
+
+  <!-- Play time summary -->
+  <div class="playtime-box" id="playtimeBox" style="display:none">
+    <h3>⏱ 출전 쿼터 현황</h3>
+    <div class="playtime-grid" id="playtimeGrid"></div>
   </div>
 
   <!-- Reasoning -->
@@ -375,290 +298,296 @@
 </div>
 
 <script>
-// ========== 선수 데이터 (players.js 인라인) ==========
-// 포지션 우선순위: "main" = 주 포지션, "sub" = 서브 포지션, "backup" = 백업 포지션, null = 불가
+// ===================== 선수 데이터 =====================
 const PLAYERS = [
-  { name: "임승환", positions: { GK:"main", LWB:"backup", LCB:"backup", RCB:"backup", RWB:"backup", DM1:"backup", DM2:"backup", CAM:"sub", LW:"main", ST:"main", RW:"main" } },
-  { name: "김대근", positions: { GK:"main", LWB:null, LCB:"main", RCB:"main", RWB:null, DM1:"main", DM2:"main", CAM:null, LW:null, ST:null, RW:null } },
-  { name: "김도윤", positions: { GK:null, LWB:null, LCB:"main", RCB:"main", RWB:null, DM1:"sub", DM2:"sub", CAM:null, LW:null, ST:null, RW:null } },
-  { name: "김보승", positions: { GK:"main", LWB:"main", LCB:"sub", RCB:"sub", RWB:"main", DM1:null, DM2:null, CAM:null, LW:null, ST:null, RW:null } },
-  { name: "김준성", positions: { GK:null, LWB:"main", LCB:"main", RCB:"main", RWB:"main", DM1:null, DM2:null, CAM:null, LW:null, ST:null, RW:null } },
-  { name: "김평화", positions: { GK:null, LWB:null, LCB:null, RCB:null, RWB:null, DM1:null, DM2:null, CAM:null, LW:"main", ST:null, RW:"main" } },
-  { name: "김표근", positions: { GK:null, LWB:null, LCB:null, RCB:null, RWB:null, DM1:"sub", DM2:"sub", CAM:"main", LW:null, ST:null, RW:null } },
-  { name: "박성렬", positions: { GK:null, LWB:null, LCB:null, RCB:null, RWB:null, DM1:null, DM2:null, CAM:"sub", LW:null, ST:"main", RW:null } },
-  { name: "양경준", positions: { GK:null, LWB:null, LCB:"main", RCB:"main", RWB:null, DM1:null, DM2:null, CAM:null, LW:null, ST:null, RW:null } },
-  { name: "염승주", positions: { GK:null, LWB:"backup", LCB:null, RCB:null, RWB:"backup", DM1:"main", DM2:"main", CAM:"sub", LW:null, ST:"backup", RW:null } },
-  { name: "전수현", positions: { GK:"main", LWB:"main", LCB:null, RCB:null, RWB:null, DM1:null, DM2:null, CAM:null, LW:null, ST:null, RW:null } },
-  { name: "정금교", positions: { GK:null, LWB:null, LCB:null, RCB:null, RWB:null, DM1:null, DM2:null, CAM:"sub", LW:"main", ST:null, RW:"main" } },
-  { name: "진민석", positions: { GK:null, LWB:null, LCB:"main", RCB:"main", RWB:null, DM1:"
-// Pitch is viewed attacking upward: GK at bottom, ST at top
+  { name: "임승환", positions: { GK:"main",  LWB:"backup", LCB:"backup", RCB:"backup", RWB:"backup", DM1:"backup", DM2:"backup", CAM:"sub",  LW:"main",  ST:"main",   RW:"main"   } },
+  { name: "김대근", positions: { GK:"main",  LWB:null,     LCB:"main",   RCB:"main",   RWB:null,     DM1:"main",   DM2:"main",   CAM:null,   LW:null,    ST:null,     RW:null     } },
+  { name: "김도윤", positions: { GK:null,    LWB:null,     LCB:"main",   RCB:"main",   RWB:null,     DM1:"sub",    DM2:"sub",    CAM:null,   LW:null,    ST:null,     RW:null     } },
+  { name: "김보승", positions: { GK:"main",  LWB:"main",   LCB:"sub",    RCB:"sub",    RWB:"main",   DM1:null,     DM2:null,     CAM:null,   LW:null,    ST:null,     RW:null     } },
+  { name: "김준성", positions: { GK:null,    LWB:"main",   LCB:"main",   RCB:"main",   RWB:"main",   DM1:null,     DM2:null,     CAM:null,   LW:null,    ST:null,     RW:null     } },
+  { name: "김평화", positions: { GK:null,    LWB:null,     LCB:null,     RCB:null,     RWB:null,     DM1:null,     DM2:null,     CAM:null,   LW:"main",  ST:null,     RW:"main"   } },
+  { name: "김표근", positions: { GK:null,    LWB:null,     LCB:null,     RCB:null,     RWB:null,     DM1:"sub",    DM2:"sub",    CAM:"main", LW:null,    ST:null,     RW:null     } },
+  { name: "박성렬", positions: { GK:null,    LWB:null,     LCB:null,     RCB:null,     RWB:null,     DM1:null,     DM2:null,     CAM:"sub",  LW:null,    ST:"main",   RW:null     } },
+  { name: "양경준", positions: { GK:null,    LWB:null,     LCB:"main",   RCB:"main",   RWB:null,     DM1:null,     DM2:null,     CAM:null,   LW:null,    ST:null,     RW:null     } },
+  { name: "염승주", positions: { GK:null,    LWB:"backup", LCB:null,     RCB:null,     RWB:"backup", DM1:"main",   DM2:"main",   CAM:"sub",  LW:null,    ST:"backup", RW:null     } },
+  { name: "전수현", positions: { GK:"main",  LWB:"main",   LCB:null,     RCB:null,     RWB:null,     DM1:null,     DM2:null,     CAM:null,   LW:null,    ST:null,     RW:null     } },
+  { name: "정금교", positions: { GK:null,    LWB:null,     LCB:null,     RCB:null,     RWB:null,     DM1:null,     DM2:null,     CAM:"sub",  LW:"main",  ST:null,     RW:"main"   } },
+  { name: "진민석", positions: { GK:null,    LWB:null,     LCB:"main",   RCB:"main",   RWB:null,     DM1:"main",   DM2:"main",   CAM:null,   LW:null,    ST:null,     RW:null     } }
+];
+
+const GK_ROTATION = ["임승환", "김대근", "김보승", "전수현"];
+
 const POSITION_LAYOUT = {
-  ST:  { x: 50,  y: 12,  role: 'att' },
-  LW:  { x: 15,  y: 24,  role: 'att' },
-  RW:  { x: 85,  y: 24,  role: 'att' },
-  CAM: { x: 50,  y: 36,  role: 'mid' },
-  DM1: { x: 35,  y: 50,  role: 'mid' },
-  DM2: { x: 65,  y: 50,  role: 'mid' },
-  LWB: { x: 10,  y: 64,  role: 'def' },
-  LCB: { x: 32,  y: 70,  role: 'def' },
-  RCB: { x: 68,  y: 70,  role: 'def' },
-  RWB: { x: 90,  y: 64,  role: 'def' },
-  GK:  { x: 50,  y: 88,  role: 'gk'  }
+  ST:  { x: 50, y: 12, role: "att", label: "ST"  },
+  LW:  { x: 15, y: 24, role: "att", label: "LW"  },
+  RW:  { x: 85, y: 24, role: "att", label: "RW"  },
+  CAM: { x: 50, y: 36, role: "mid", label: "CAM" },
+  DM1: { x: 35, y: 50, role: "mid", label: "DM"  },
+  DM2: { x: 65, y: 50, role: "mid", label: "DM"  },
+  LWB: { x: 10, y: 64, role: "def", label: "LWB" },
+  LCB: { x: 32, y: 70, role: "def", label: "LCB" },
+  RCB: { x: 68, y: 70, role: "def", label: "RCB" },
+  RWB: { x: 90, y: 64, role: "def", label: "RWB" },
+  GK:  { x: 50, y: 88, role: "gk",  label: "GK"  }
 };
 
-let currentQuarter = 0;
 let allQuarterResults = [];
 
-// ── Saved API key ──
+// ===================== 초기화 =====================
 window.onload = () => {
-  const saved = localStorage.getItem('gemini_api_key');
-  if (saved) document.getElementById('apiKeyInput').value = saved;
+  const saved = localStorage.getItem("gemini_api_key");
+  if (saved) document.getElementById("apiKeyInput").value = saved;
   renderPlayerGrid();
 };
 
 function saveApiKey() {
-  const val = document.getElementById('apiKeyInput').value.trim();
+  const val = document.getElementById("apiKeyInput").value.trim();
   if (!val) return;
-  localStorage.setItem('gemini_api_key', val);
-  alert('✅ API 키가 저장되었습니다.');
+  localStorage.setItem("gemini_api_key", val);
+  alert("API 키가 저장되었습니다.");
 }
 
 function getApiKey() {
-  return document.getElementById('apiKeyInput').value.trim() || localStorage.getItem('gemini_api_key') || '';
+  return document.getElementById("apiKeyInput").value.trim()
+      || localStorage.getItem("gemini_api_key") || "";
 }
 
-// ── Player grid ──
+// ===================== 선수 그리드 =====================
 function renderPlayerGrid() {
-  const grid = document.getElementById('playerGrid');
-  grid.innerHTML = PLAYERS.map(p => `
-    <label class="player-chip" id="chip_${p.name}">
-      <input type="checkbox" value="${p.name}" onchange="onPlayerToggle()" />
-      ${p.name}
-    </label>
-  `).join('');
+  const grid = document.getElementById("playerGrid");
+  grid.innerHTML = PLAYERS.map(p =>
+    '<label class="player-chip" id="chip_' + p.name + '">' +
+    '<input type="checkbox" value="' + p.name + '" onchange="onPlayerToggle()" />' +
+    p.name + '</label>'
+  ).join("");
 }
 
 function onPlayerToggle() {
   const checked = getSelectedPlayers();
-  document.getElementById('selectedCount').textContent = checked.length;
-  document.getElementById('generateBtn').disabled = checked.length < 11;
-  document.querySelectorAll('.player-chip').forEach(chip => {
-    const cb = chip.querySelector('input');
-    chip.classList.toggle('selected', cb.checked);
+  document.getElementById("selectedCount").textContent = checked.length;
+  document.getElementById("generateBtn").disabled = checked.length < 11;
+  document.querySelectorAll(".player-chip").forEach(function(chip) {
+    chip.classList.toggle("selected", chip.querySelector("input").checked);
   });
 }
 
 function getSelectedPlayers() {
-  return [...document.querySelectorAll('.player-chip input:checked')].map(i => i.value);
+  return Array.from(document.querySelectorAll(".player-chip input:checked")).map(function(i) { return i.value; });
 }
 
-// ── Build AI prompt ──
-function buildPrompt(selectedNames, quarterIndex) {
-  const selected = PLAYERS.filter(p => selectedNames.includes(p.name));
-  const gkForThisQuarter = GK_ROTATION[quarterIndex];
+// ===================== 프롬프트 빌더 =====================
+function buildPrompt(selectedNames) {
+  var selected = PLAYERS.filter(function(p) { return selectedNames.indexOf(p.name) >= 0; });
+  var totalPlayers = selected.length;
+  var fieldSlots = 4 * 10; // 4쿼터 * 필드 10명
+  var idealFieldQ = (fieldSlots / totalPlayers).toFixed(1);
 
-  const priorityScore = { main: 3, sub: 2, backup: 1 };
+  var availableGKs = GK_ROTATION.filter(function(gk) { return selectedNames.indexOf(gk) >= 0; });
 
-  const playerDescriptions = selected.map(p => {
-    const posEntries = Object.entries(p.positions)
-      .filter(([pos, val]) => val !== null && pos !== 'GK')
-      .sort((a, b) => (priorityScore[b[1]] || 0) - (priorityScore[a[1]] || 0))
-      .map(([pos, val]) => `${pos}(${val === 'main' ? '주' : val === 'sub' ? '서브' : '백업'})`)
-      .join(', ');
-    const gkNote = p.positions.GK === 'main' ? ' [골키퍼 가능]' : '';
-    return `- ${p.name}${gkNote}: ${posEntries || '지정 포지션 없음'}`;
-  }).join('\n');
+  // GK 쿼터 배정
+  var gkAssignment = {};
+  for (var q = 0; q < 4; q++) {
+    gkAssignment[q] = availableGKs[q % availableGKs.length];
+  }
 
-  return `
-당신은 풋살 포지션 배치 전문가입니다.
+  var priorityScore = { main: 3, sub: 2, backup: 1 };
 
-## 포메이션
-4-2-3-1 (총 11명)
-포지션: GK, LWB, LCB, RCB, RWB, DM1, DM2, CAM, LW, ST, RW
+  var playerDescriptions = selected.map(function(p) {
+    var posEntries = Object.keys(p.positions)
+      .filter(function(pos) { return p.positions[pos] !== null && pos !== "GK"; })
+      .sort(function(a, b) { return (priorityScore[p.positions[b]] || 0) - (priorityScore[p.positions[a]] || 0); })
+      .map(function(pos) {
+        var val = p.positions[pos];
+        var label = val === "main" ? "주" : val === "sub" ? "서브" : "백업";
+        return pos + "(" + label + ")";
+      }).join(", ");
+    var gkIdx = GK_ROTATION.indexOf(p.name);
+    var gkNote = p.positions.GK === "main"
+      ? " [GK가능" + (gkIdx >= 0 ? ", " + (gkIdx+1) + "쿼터GK담당" : "") + "]"
+      : "";
+    return "- " + p.name + gkNote + ": " + (posEntries || "지정없음");
+  }).join("\n");
 
-## 이번 쿼터 (${quarterIndex + 1}쿼터)
-골키퍼는 반드시 **${gkForThisQuarter}**으로 고정하세요.
-(골키퍼 순환 규칙: 4명이 각 쿼터를 담당합니다.)
+  var gkSchedule = [0,1,2,3].map(function(q) {
+    return "  " + (q+1) + "쿼터: " + gkAssignment[q];
+  }).join("\n");
 
-## 선수 목록 및 포지션 적합도
-${playerDescriptions}
-
-## 배치 규칙
-1. GK는 반드시 ${gkForThisQuarter}
-2. 각 선수는 정확히 1개의 포지션에만 배치
-3. 포지션 우선순위: 주 포지션 > 서브 포지션 > 백업 포지션
-4. 모든 11개 포지션(GK, LWB, LCB, RCB, RWB, DM1, DM2, CAM, LW, ST, RW)이 반드시 채워져야 함
-5. 어쩔 수 없는 경우 백업 포지션도 사용 가능
-
-## 응답 형식
-반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트 없이 JSON만:
-
-{
-  "lineup": {
-    "GK": "선수이름",
-    "LWB": "선수이름",
-    "LCB": "선수이름",
-    "RCB": "선수이름",
-    "RWB": "선수이름",
-    "DM1": "선수이름",
-    "DM2": "선수이름",
-    "CAM": "선수이름",
-    "LW": "선수이름",
-    "ST": "선수이름",
-    "RW": "선수이름"
-  },
-  "reasoning": "배치 이유를 2-3줄로 설명"
+  return "당신은 풋살 포지션 배치 전문가입니다. 4쿼터 전체 포지션을 한 번에 짜주세요.\n\n" +
+    "## 포메이션\n4-2-3-1 (총 11명/쿼터)\n포지션: GK, LWB, LCB, RCB, RWB, DM1, DM2, CAM, LW, ST, RW\n\n" +
+    "## 오늘 선수단 (" + totalPlayers + "명)\n" + playerDescriptions + "\n\n" +
+    "## 골키퍼 쿼터 배정 (고정, 변경 불가)\n" + gkSchedule + "\n\n" +
+    "## 배치 규칙\n" +
+    "1. 각 쿼터 GK는 위 골키퍼 배정표를 반드시 따를 것\n" +
+    "2. 각 선수는 쿼터당 정확히 1개 포지션에만 배치\n" +
+    "3. 포지션 우선순위: 주 > 서브 > 백업 (불가피할 때만 백업 사용)\n" +
+    "4. 모든 11개 포지션이 매 쿼터 반드시 채워져야 함\n\n" +
+    "## 공평한 출전 규칙 (매우 중요)\n" +
+    "- 골키퍼를 뛴 쿼터는 필드 출전 횟수에 포함하지 않음\n" +
+    "- 각 선수의 필드 출전 쿼터 수 차이가 2쿼터를 초과하면 안 됨\n" +
+    "- 전체 필드 슬롯: " + fieldSlots + "개, 선수: " + totalPlayers + "명, 이상적 출전: " + idealFieldQ + "쿼터/명\n" +
+    "- 출전이 적은 선수를 우선 배치하고, 쉬는 선수가 생기면 최대한 균등하게 분산할 것\n\n" +
+    "## 응답 형식\n반드시 아래 JSON만 응답 (다른 텍스트 없이):\n\n" +
+    '{\n  "quarters": [\n' +
+    '    { "quarter": 1, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } },\n' +
+    '    { "quarter": 2, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } },\n' +
+    '    { "quarter": 3, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } },\n' +
+    '    { "quarter": 4, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } }\n' +
+    '  ],\n  "reasoning": "배치 전략 및 출전 균형에 대한 2-3줄 설명"\n}';
 }
-`.trim();
-}
 
-// ── Call Gemini API ──
+// ===================== Gemini API 호출 =====================
 async function callGemini(prompt) {
-  const apiKey = getApiKey();
-  if (!apiKey) throw new Error('Gemini API 키를 입력해주세요.');
+  var apiKey = getApiKey();
+  if (!apiKey) throw new Error("Gemini API 키를 입력해주세요.");
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`,
+  var res = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=" + apiKey,
     {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 1024 }
+        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
       })
     }
   );
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `API 오류 (${res.status})`);
+    var err = await res.json().catch(function() { return {}; });
+    throw new Error((err.error && err.error.message) || ("API 오류 (" + res.status + ")"));
   }
 
-  const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  // Strip markdown fences if present
-  const clean = text.replace(/```json|```/g, '').trim();
+  var data = await res.json();
+  var text = (data.candidates && data.candidates[0] && data.candidates[0].content &&
+              data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
+              data.candidates[0].content.parts[0].text) || "";
+  var clean = text.replace(/```json|```/g, "").trim();
   return JSON.parse(clean);
 }
 
-// ── Main: generate all 4 quarters ──
+// ===================== 메인: 생성 =====================
 async function generateFormation() {
-  const selected = getSelectedPlayers();
+  var selected = getSelectedPlayers();
   if (selected.length < 11) return;
-  if (!getApiKey()) { showError('Gemini API 키를 먼저 입력해주세요.'); return; }
+  if (!getApiKey()) { showError("Gemini API 키를 먼저 입력해주세요."); return; }
 
-  // How many GKs are in selected?
-  const availableGKs = GK_ROTATION.filter(gk => selected.includes(gk));
+  var availableGKs = GK_ROTATION.filter(function(gk) { return selected.indexOf(gk) >= 0; });
   if (availableGKs.length === 0) {
-    showError('골키퍼 가능 선수(임승환, 김대근, 김보승, 전수현)가 한 명 이상 포함되어야 합니다.');
+    showError("골키퍼 가능 선수(임승환, 김대근, 김보승, 전수현) 중 한 명 이상이 포함되어야 합니다.");
     return;
   }
 
   hideError();
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('quartersNav').style.display = 'none';
-  document.getElementById('pitchWrapper').style.display = 'none';
-  document.getElementById('generateBtn').disabled = true;
-
-  allQuarterResults = [];
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("quartersNav").style.display = "none";
+  document.getElementById("pitchWrapper").style.display = "none";
+  document.getElementById("generateBtn").disabled = true;
+  document.getElementById("loadingStep").textContent = "4쿼터 동시 분석 중...";
 
   try {
-    // Generate for each available GK quarter only
-    for (let q = 0; q < 4; q++) {
-      const gkForQ = GK_ROTATION[q];
-      // If this GK is not in selected, skip or substitute
-      if (!selected.includes(gkForQ)) {
-        // Use first available GK instead and note
-        allQuarterResults.push(null); // mark as skipped
-        continue;
-      }
-      const prompt = buildPrompt(selected, q);
-      const result = await callGemini(prompt);
-      allQuarterResults.push(result);
+    var prompt = buildPrompt(selected);
+    var result = await callGemini(prompt);
+
+    allQuarterResults = result.quarters;
+
+    renderQuarterTabs();
+    renderPlaytimeTable(selected);
+    showQuarter(0);
+
+    if (result.reasoning) {
+      document.getElementById("reasoningText").textContent = result.reasoning;
+      document.getElementById("reasoningBox").style.display = "block";
     }
 
-    // Filter out null results and rebuild tabs
-    renderQuarterTabs(selected);
-    showQuarter(allQuarterResults.findIndex(r => r !== null));
-
-    document.getElementById('quartersNav').style.display = 'flex';
-    document.getElementById('pitchWrapper').style.display = 'block';
+    document.getElementById("quartersNav").style.display = "flex";
+    document.getElementById("pitchWrapper").style.display = "block";
   } catch (e) {
-    showError('오류: ' + e.message);
+    showError("오류: " + e.message);
   } finally {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('generateBtn').disabled = false;
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("generateBtn").disabled = false;
   }
 }
 
-function renderQuarterTabs(selected) {
-  const nav = document.getElementById('quartersNav');
-  nav.innerHTML = '';
-  allQuarterResults.forEach((result, i) => {
-    if (result === null) return; // skip quarters with absent GK
-    const gk = GK_ROTATION[i];
-    const btn = document.createElement('button');
-    btn.className = 'quarter-tab';
-    btn.textContent = `${i + 1}쿼터 (GK: ${gk})`;
-    btn.dataset.quarter = i;
-    btn.onclick = () => showQuarter(i);
-    nav.appendChild(btn);
-  });
+// ===================== 쿼터 탭 =====================
+function renderQuarterTabs() {
+  var nav = document.getElementById("quartersNav");
+  nav.innerHTML = allQuarterResults.map(function(q, i) {
+    return '<button class="quarter-tab" data-q="' + i + '" onclick="showQuarter(' + i + ')">' +
+           (i+1) + '쿼터 (GK: ' + q.lineup.GK + ')</button>';
+  }).join("");
 }
 
-function showQuarter(quarterIndex) {
-  currentQuarter = quarterIndex;
-  const result = allQuarterResults[quarterIndex];
-  if (!result) return;
-
-  // Update tab highlight
-  document.querySelectorAll('.quarter-tab').forEach(tab => {
-    tab.classList.toggle('active', parseInt(tab.dataset.quarter) === quarterIndex);
+function showQuarter(idx) {
+  document.querySelectorAll(".quarter-tab").forEach(function(tab) {
+    tab.classList.toggle("active", parseInt(tab.dataset.q) === idx);
   });
-
-  renderPitch(result.lineup);
-
-  if (result.reasoning) {
-    document.getElementById('reasoningText').textContent = result.reasoning;
-    document.getElementById('reasoningBox').style.display = 'block';
-  }
+  renderPitch(allQuarterResults[idx].lineup);
 }
 
+// ===================== 피치 렌더링 =====================
 function renderPitch(lineup) {
-  const pitch = document.getElementById('pitch');
-  // Remove old nodes
-  pitch.querySelectorAll('.player-node').forEach(n => n.remove());
+  var pitch = document.getElementById("pitch");
+  pitch.querySelectorAll(".player-node").forEach(function(n) { n.remove(); });
 
-  Object.entries(lineup).forEach(([pos, name]) => {
-    const layout = POSITION_LAYOUT[pos];
+  Object.keys(lineup).forEach(function(pos) {
+    var name = lineup[pos];
+    var layout = POSITION_LAYOUT[pos];
     if (!layout) return;
 
-    const node = document.createElement('div');
-    node.className = 'player-node';
-    node.style.left = layout.x + '%';
-    node.style.top  = layout.y + '%';
-
-    const posShortLabels = {
-      GK: 'GK', LWB: 'LWB', LCB: 'LCB', RCB: 'RCB', RWB: 'RWB',
-      DM1: 'DM', DM2: 'DM', CAM: 'CAM', LW: 'LW', ST: 'ST', RW: 'RW'
-    };
-
-    node.innerHTML = `
-      <div class="player-circle ${layout.role}">${posShortLabels[pos]}</div>
-      <div class="player-name">${name}</div>
-    `;
-
+    var node = document.createElement("div");
+    node.className = "player-node";
+    node.style.left = layout.x + "%";
+    node.style.top  = layout.y + "%";
+    node.innerHTML =
+      '<div class="player-circle ' + layout.role + '">' + layout.label + '</div>' +
+      '<div class="player-name">' + name + '</div>';
     pitch.appendChild(node);
   });
 }
 
+// ===================== 출전 현황 테이블 =====================
+function renderPlaytimeTable(selectedNames) {
+  var stats = {};
+  selectedNames.forEach(function(name) { stats[name] = { fieldQ: [], gkQ: [] }; });
+
+  allQuarterResults.forEach(function(qr, qi) {
+    Object.keys(qr.lineup).forEach(function(pos) {
+      var name = qr.lineup[pos];
+      if (!stats[name]) return;
+      if (pos === "GK") stats[name].gkQ.push(qi + 1);
+      else              stats[name].fieldQ.push(qi + 1);
+    });
+  });
+
+  var html =
+    '<div class="hdr pname">선수</div>' +
+    '<div class="hdr">1Q</div><div class="hdr">2Q</div><div class="hdr">3Q</div><div class="hdr">4Q</div>' +
+    '<div class="hdr">필드</div>';
+
+  selectedNames.forEach(function(name) {
+    var s = stats[name];
+    html += '<div class="pname">' + name + '</div>';
+    for (var q = 1; q <= 4; q++) {
+      if (s.gkQ.indexOf(q) >= 0)        html += '<div class="cell gk-q">GK</div>';
+      else if (s.fieldQ.indexOf(q) >= 0) html += '<div class="cell played">●</div>';
+      else                               html += '<div class="cell resting">–</div>';
+    }
+    html += '<div class="cell"><span class="total-chip">' + s.fieldQ.length + 'Q</span></div>';
+  });
+
+  document.getElementById("playtimeGrid").innerHTML = html;
+  document.getElementById("playtimeBox").style.display = "block";
+}
+
+// ===================== 유틸 =====================
 function showError(msg) {
-  const box = document.getElementById('errorBox');
+  var box = document.getElementById("errorBox");
   box.textContent = msg;
-  box.style.display = 'block';
+  box.style.display = "block";
 }
 function hideError() {
-  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById("errorBox").style.display = "none";
 }
 </script>
 </body>
