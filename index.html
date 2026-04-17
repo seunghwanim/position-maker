@@ -437,8 +437,23 @@ function buildPrompt(selectedNames) {
     var isGK = p.positions.GK === "main";
     var gkNote = isGK ? " [GK가능, " + (gkIdx+1) + "쿼터GK담당]" : "";
     var fieldTarget = target[p.name];
-    return "- " + p.name + gkNote + " → 필드 목표: " + fieldTarget + "쿼터 | 가능포지션: " + (posEntries || "지정없음");
+    var restCount = 4 - gkCount[p.name] - fieldTarget;
+    var restNote = restCount > 0 ? " (쉬는쿼터 " + restCount + "개)" : "";
+    return "- " + p.name + gkNote + " → 필드 " + fieldTarget + "쿼터 필수" + restNote + " | 가능포지션: " + (posEntries || "지정없음");
   }).join("\n");
+
+  // 쿼터별 출전 제약표
+  var quarterTable = "선수명 | 1Q | 2Q | 3Q | 4Q | 필드합계\n";
+  quarterTable += "-------|----|----|----|----|--------\n";
+  selected.forEach(function(p) {
+    var row = p.name + " |";
+    for (var q = 0; q < 4; q++) {
+      if (gkAssignment[q] === p.name) row += " GK |";
+      else row += " ?  |";
+    }
+    row += " " + target[p.name] + "쿼터 필수";
+    quarterTable += row + "\n";
+  });
 
   var gkSchedule = [0,1,2,3].map(function(q) {
     return "  " + (q+1) + "쿼터 GK: " + gkAssignment[q];
@@ -447,16 +462,17 @@ function buildPrompt(selectedNames) {
   return "당신은 풋살 포지션 배치 전문가입니다. 4쿼터 전체 포지션을 한 번에 짜주세요.\n\n" +
     "## 포메이션\n4-2-3-1 (총 11명/쿼터)\n포지션: GK, LWB, LCB, RCB, RWB, DM1, DM2, CAM, LW, ST, RW\n\n" +
     "## 골키퍼 쿼터 배정 (절대 변경 불가)\n" + gkSchedule + "\n\n" +
-    "## 선수별 목표 출전 쿼터\n" + playerDescriptions + "\n\n" +
+    "## 선수별 필드 출전 목표\n" + playerDescriptions + "\n\n" +
+    "## 쿼터별 출전 제약표 (GK=골키퍼, ?=AI가 필드 or 벤치 결정)\n" + quarterTable + "\n" +
     "## 배치 규칙\n" +
     "1. 각 쿼터 GK는 위 배정표를 반드시 따를 것\n" +
-    "2. 각 선수는 쿼터당 정확히 1개 포지션에만 배치\n" +
+    "2. 각 선수는 쿼터당 정확히 1개 포지션에만 배치 (한 쿼터에 같은 선수 중복 절대 불가)\n" +
     "3. 포지션 우선순위: 주 > 서브 > 백업\n" +
     "4. 모든 11개 포지션이 매 쿼터 반드시 채워져야 함\n\n" +
-    "## 출전 균형 규칙 (가장 중요)\n" +
-    "- 각 선수 옆에 표시된 [필드 목표: N쿼터]를 반드시 지킬 것\n" +
-    "- GK를 뛰는 쿼터에는 그 선수를 필드에 배치하지 말 것\n" +
-    "- 필드 출전 쿼터 수가 목표와 다른 선수가 없도록 할 것\n\n" +
+    "## 출전 균형 규칙 (절대 준수)\n" +
+    "- 각 선수의 필드 출전 쿼터 수를 위 목표에 정확히 맞출 것\n" +
+    "- GK로 배정된 쿼터에는 절대 필드에 배치하지 말 것\n" +
+    "- 필드 출전 쿼터가 목표보다 많거나 적은 선수가 없도록 할 것\n\n" +
     "## 응답 형식\n반드시 아래 JSON만 응답 (다른 텍스트 없이):\n\n" +
     '{\n  "quarters": [\n' +
     '    { "quarter": 1, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } },\n' +
