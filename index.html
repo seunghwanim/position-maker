@@ -449,9 +449,9 @@ async function callGemini(prompt) {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 2048,
-          responseMimeType: "application/json"
-        }
+          maxOutputTokens: 2048
+        },
+        thinkingConfig: { thinkingBudget: 0 }
       })
     }
   );
