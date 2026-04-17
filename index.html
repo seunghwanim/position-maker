@@ -438,9 +438,13 @@ function buildPrompt(selectedNames) {
     var isGK = p.positions.GK === "main";
     var gkNote = isGK ? " [GK가능, " + (gkIdx+1) + "쿼터GK담당]" : "";
     var fieldTarget = target[p.name];
-    var restCount = 4 - gkCount[p.name] - fieldTarget;
-    var restNote = restCount > 0 ? " (쉬는쿼터 " + restCount + "개)" : "";
-    return "- " + p.name + gkNote + " → 필드 " + fieldTarget + "쿼터 필수" + restNote + " | 가능포지션: " + (posEntries || "지정없음");
+    var gkQ = gkCount[p.name]; // GK 뛰는 쿼터 수
+    var restCount = 4 - gkQ - fieldTarget;
+    var totalNote = gkQ > 0
+      ? " [GK " + gkQ + "쿼터 + 필드 " + fieldTarget + "쿼터 = 총 " + (gkQ + fieldTarget) + "쿼터 출전]"
+      : " [필드 " + fieldTarget + "쿼터 출전]";
+    var restNote = restCount > 0 ? " (벤치 " + restCount + "쿼터)" : "";
+    return "- " + p.name + gkNote + totalNote + restNote + " | 가능포지션: " + (posEntries || "지정없음");
   }).join("\n");
 
   // 쿼터별 출전 제약표
@@ -471,9 +475,10 @@ function buildPrompt(selectedNames) {
     "3. 포지션 우선순위: 주 > 서브 > 백업\n" +
     "4. 모든 11개 포지션이 매 쿼터 반드시 채워져야 함\n\n" +
     "## 출전 균형 규칙 (절대 준수)\n" +
-    "- 각 선수의 필드 출전 쿼터 수를 위 목표에 정확히 맞출 것\n" +
+    "- GK 담당자도 나머지 쿼터에 필드에 반드시 출전해야 함 (GK 뛰었다고 추가로 쉬면 안 됨)\n" +
+    "- 각 선수의 [필드 N쿼터 출전] 숫자를 정확히 지킬 것\n" +
     "- GK로 배정된 쿼터에는 절대 필드에 배치하지 말 것\n" +
-    "- 필드 출전 쿼터가 목표보다 많거나 적은 선수가 없도록 할 것\n\n" +
+    "- 한 쿼터에 같은 선수가 두 포지션에 나오면 절대 안 됨\n\n" +
     "## 응답 형식\n반드시 아래 JSON만 응답 (다른 텍스트 없이):\n\n" +
     '{\n  "quarters": [\n' +
     '    { "quarter": 1, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } },\n' +
@@ -498,7 +503,7 @@ async function callGemini(prompt) {
         generationConfig: {
           temperature: 0.2,
           maxOutputTokens: 8192,
-          thinkingConfig: { thinkingBudget: 0 }
+          thinkingConfig: { thinkingBudget: 1024 }
          }   
       })
     }
