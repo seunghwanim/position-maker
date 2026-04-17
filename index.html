@@ -447,16 +447,24 @@ function buildPrompt(selectedNames) {
     return "- " + p.name + gkNote + totalNote + restNote + " | 가능포지션: " + (posEntries || "지정없음");
   }).join("\n");
 
-  // 쿼터별 출전 제약표
+  // 쿼터별 출전 제약표 - 벤치 쿼터까지 명시
+  // 필드 목표 쿼터를 채우고 남는 건 벤치(R)
+  // 벤치 배정: GK 없는 쿼터 중 뒤쪽 쿼터부터 벤치
   var quarterTable = "선수명 | 1Q | 2Q | 3Q | 4Q | 필드합계\n";
   quarterTable += "-------|----|----|----|----|--------\n";
   selected.forEach(function(p) {
+    var fieldTarget2 = target[p.name];
+    var restNeeded = 4 - gkCount[p.name] - fieldTarget2;
+    // GK 아닌 쿼터들 중 뒤에서부터 벤치 배정
+    var nonGKQuarters = [0,1,2,3].filter(function(q) { return gkAssignment[q] !== p.name; });
+    var benchQuarters = nonGKQuarters.slice(nonGKQuarters.length - restNeeded);
     var row = p.name + " |";
     for (var q = 0; q < 4; q++) {
       if (gkAssignment[q] === p.name) row += " GK |";
-      else row += " ?  |";
+      else if (benchQuarters.indexOf(q) >= 0) row += " 벤치|";
+      else row += " 필드|";
     }
-    row += " " + target[p.name] + "쿼터 필수";
+    row += " " + fieldTarget2 + "쿼터";
     quarterTable += row + "\n";
   });
 
@@ -474,10 +482,10 @@ function buildPrompt(selectedNames) {
     "2. 각 선수는 쿼터당 정확히 1개 포지션에만 배치 (한 쿼터에 같은 선수 중복 절대 불가)\n" +
     "3. 포지션 우선순위: 주 > 서브 > 백업\n" +
     "4. 모든 11개 포지션이 매 쿼터 반드시 채워져야 함\n\n" +
-    "## 출전 균형 규칙 (절대 준수)\n" +
-    "- GK 담당자도 나머지 쿼터에 필드에 반드시 출전해야 함 (GK 뛰었다고 추가로 쉬면 안 됨)\n" +
-    "- 각 선수의 [필드 N쿼터 출전] 숫자를 정확히 지킬 것\n" +
-    "- GK로 배정된 쿼터에는 절대 필드에 배치하지 말 것\n" +
+    "## 출전 제약 (위 표를 그대로 따를 것)\n" +
+    "- 위 표에서 [필드]로 표시된 칸: 해당 선수를 반드시 그 쿼터 필드에 배치\n" +
+    "- 위 표에서 [GK]로 표시된 칸: 해당 선수는 GK로만 출전, 필드 배치 금지\n" +
+    "- 위 표에서 [벤치]로 표시된 칸: 해당 선수는 그 쿼터에 출전 불가\n" +
     "- 한 쿼터에 같은 선수가 두 포지션에 나오면 절대 안 됨\n\n" +
     "## 응답 형식\n반드시 아래 JSON만 응답 (다른 텍스트 없이):\n\n" +
     '{\n  "quarters": [\n' +
