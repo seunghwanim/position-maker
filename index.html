@@ -465,12 +465,16 @@ async function callGemini(prompt) {
   var text = (data.candidates && data.candidates[0] && data.candidates[0].content &&
               data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
               data.candidates[0].content.parts[0].text) || "";
+  console.log("=== Gemini 원본 응답 ===", text);
   var clean = text.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim();
   try {
     return JSON.parse(clean);
   } catch(e) {
+    console.log("=== 파싱 실패, 정규식 시도 ===", clean);
     var match = clean.match(/\{[\s\S]*\}/);
-    if (match) return JSON.parse(match[0]);
+    if (match) {
+      try { return JSON.parse(match[0]); } catch(e2) { console.log("정규식도 실패:", match[0]); }
+    }
     throw new Error("AI 응답을 파싱할 수 없습니다. 다시 시도해주세요.");
   }
 }
