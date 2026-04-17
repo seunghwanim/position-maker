@@ -375,23 +375,55 @@ function getSelectedPlayers() {
   return Array.from(document.querySelectorAll(".player-chip input:checked")).map(function(i) { return i.value; });
 }
 
+// ===================== 출전 쿼터 수 계산 =====================
+// GK 담당 쿼터를 제외하고 각 선수가 몇 쿼터 필드에 나와야 하는지 계산
+function calcTargetFieldQuarters(selectedNames) {
+  var availableGKs = GK_ROTATION.filter(function(gk) { return selectedNames.indexOf(gk) >= 0; });
+  var gkAssignment = [0,1,2,3].map(function(q) { return availableGKs[q % availableGKs.length]; });
+
+  // 각 선수가 GK로 뛰는 쿼터 수
+  var gkCount = {};
+  selectedNames.forEach(function(n) { gkCount[n] = 0; });
+  gkAssignment.forEach(function(name) { gkCount[name]++; });
+
+  // 필드 슬롯: 4쿼터 * 10명 = 40
+  var fieldSlots = 40;
+  var n = selectedNames.length;
+
+  // 각 선수가 뛸 수 있는 최대 필드 쿼터 = 4 - GK쿼터수
+  // 가능한 한 균등하게 배분: floor(40/n) 또는 ceil(40/n)
+  var base = Math.floor(fieldSlots / n);
+  var extra = fieldSlots - base * n; // extra명은 1쿼터 더 뜀
+
+  // GK 담당자는 GK쿼터만큼 필드 쿼터가 줄어드므로 우선 extra 배정
+  // 정렬: GK 많이 뛰는 사람 먼저 extra 배정 (필드 쿼터 손해 보전)
+  var sorted = selectedNames.slice().sort(function(a, b) {
+    return gkCount[b] - gkCount[a];
+  });
+
+  var target = {};
+  sorted.forEach(function(name, i) {
+    var idealField = (i < extra) ? base + 1 : base;
+    // GK 뛰는 쿼터는 필드 못 뛰므로, 실제 필드 목표는 idealField에서 GK쿼터 빼지 않음
+    // (GK쿼터는 별도이므로 필드 목표 그대로)
+    target[name] = Math.min(idealField, 4 - gkCount[name]); // 최대 4-GK쿼터
+  });
+
+  return { target: target, gkAssignment: gkAssignment, gkCount: gkCount };
+}
+
 // ===================== 프롬프트 빌더 =====================
 function buildPrompt(selectedNames) {
   var selected = PLAYERS.filter(function(p) { return selectedNames.indexOf(p.name) >= 0; });
   var totalPlayers = selected.length;
-  var fieldSlots = 4 * 10; // 4쿼터 * 필드 10명
-  var idealFieldQ = (fieldSlots / totalPlayers).toFixed(1);
 
-  var availableGKs = GK_ROTATION.filter(function(gk) { return selectedNames.indexOf(gk) >= 0; });
-
-  // GK 쿼터 배정
-  var gkAssignment = {};
-  for (var q = 0; q < 4; q++) {
-    gkAssignment[q] = availableGKs[q % availableGKs.length];
-  }
+  var calc = calcTargetFieldQuarters(selectedNames);
+  var target = calc.target;
+  var gkAssignment = calc.gkAssignment;
 
   var priorityScore = { main: 3, sub: 2, backup: 1 };
 
+  // 선수별 설명 + 목표 필드 쿼터 수 명시
   var playerDescriptions = selected.map(function(p) {
     var posEntries = Object.keys(p.positions)
       .filter(function(pos) { return p.positions[pos] !== null && pos !== "GK"; })
@@ -402,30 +434,29 @@ function buildPrompt(selectedNames) {
         return pos + "(" + label + ")";
       }).join(", ");
     var gkIdx = GK_ROTATION.indexOf(p.name);
-    var gkNote = p.positions.GK === "main"
-      ? " [GK가능" + (gkIdx >= 0 ? ", " + (gkIdx+1) + "쿼터GK담당" : "") + "]"
-      : "";
-    return "- " + p.name + gkNote + ": " + (posEntries || "지정없음");
+    var isGK = p.positions.GK === "main";
+    var gkNote = isGK ? " [GK가능, " + (gkIdx+1) + "쿼터GK담당]" : "";
+    var fieldTarget = target[p.name];
+    return "- " + p.name + gkNote + " → 필드 목표: " + fieldTarget + "쿼터 | 가능포지션: " + (posEntries || "지정없음");
   }).join("\n");
 
   var gkSchedule = [0,1,2,3].map(function(q) {
-    return "  " + (q+1) + "쿼터: " + gkAssignment[q];
+    return "  " + (q+1) + "쿼터 GK: " + gkAssignment[q];
   }).join("\n");
 
   return "당신은 풋살 포지션 배치 전문가입니다. 4쿼터 전체 포지션을 한 번에 짜주세요.\n\n" +
     "## 포메이션\n4-2-3-1 (총 11명/쿼터)\n포지션: GK, LWB, LCB, RCB, RWB, DM1, DM2, CAM, LW, ST, RW\n\n" +
-    "## 오늘 선수단 (" + totalPlayers + "명)\n" + playerDescriptions + "\n\n" +
-    "## 골키퍼 쿼터 배정 (고정, 변경 불가)\n" + gkSchedule + "\n\n" +
+    "## 골키퍼 쿼터 배정 (절대 변경 불가)\n" + gkSchedule + "\n\n" +
+    "## 선수별 목표 출전 쿼터\n" + playerDescriptions + "\n\n" +
     "## 배치 규칙\n" +
-    "1. 각 쿼터 GK는 위 골키퍼 배정표를 반드시 따를 것\n" +
+    "1. 각 쿼터 GK는 위 배정표를 반드시 따를 것\n" +
     "2. 각 선수는 쿼터당 정확히 1개 포지션에만 배치\n" +
-    "3. 포지션 우선순위: 주 > 서브 > 백업 (불가피할 때만 백업 사용)\n" +
+    "3. 포지션 우선순위: 주 > 서브 > 백업\n" +
     "4. 모든 11개 포지션이 매 쿼터 반드시 채워져야 함\n\n" +
-    "## 공평한 출전 규칙 (매우 중요)\n" +
-    "- 골키퍼를 뛴 쿼터는 필드 출전 횟수에 포함하지 않음\n" +
-    "- 각 선수의 필드 출전 쿼터 수 차이가 2쿼터를 초과하면 안 됨\n" +
-    "- 전체 필드 슬롯: " + fieldSlots + "개, 선수: " + totalPlayers + "명, 이상적 출전: " + idealFieldQ + "쿼터/명\n" +
-    "- 출전이 적은 선수를 우선 배치하고, 쉬는 선수가 생기면 최대한 균등하게 분산할 것\n\n" +
+    "## 출전 균형 규칙 (가장 중요)\n" +
+    "- 각 선수 옆에 표시된 [필드 목표: N쿼터]를 반드시 지킬 것\n" +
+    "- GK를 뛰는 쿼터에는 그 선수를 필드에 배치하지 말 것\n" +
+    "- 필드 출전 쿼터 수가 목표와 다른 선수가 없도록 할 것\n\n" +
     "## 응답 형식\n반드시 아래 JSON만 응답 (다른 텍스트 없이):\n\n" +
     '{\n  "quarters": [\n' +
     '    { "quarter": 1, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } },\n' +
