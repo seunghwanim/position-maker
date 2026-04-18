@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>⚽ 포지션 메이커</title>
+  <title>⚽ 인사FC 포지션 메이커</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -450,30 +450,54 @@ function calcAssignment(selectedNames) {
 function buildQuarterPrompt(quarterIdx, qLineup) {
   var gkName = qLineup.gk;
   var fieldPlayers = qLineup.fieldPlayers;
+  var FIELD_POSITIONS = ["LWB","LCB","RCB","RWB","DM1","DM2","CAM","LW","ST","RW"];
   var priorityScore = { main: 3, sub: 2, backup: 1 };
+  var priorityLabel = { main: "주", sub: "서브", backup: "백업" };
 
+  // 선수별 가능 포지션 (주>서브>백업 순)
   var playerDesc = fieldPlayers.map(function(name) {
     var p = PLAYERS.filter(function(pl) { return pl.name === name; })[0];
-    if (!p) return "- " + name + ": 정보없음";
-    var posEntries = Object.keys(p.positions)
-      .filter(function(pos) { return p.positions[pos] !== null && pos !== "GK"; })
+    if (!p) return "- " + name + ": 지정없음";
+    var entries = Object.keys(p.positions)
+      .filter(function(pos) { return p.positions[pos] !== null && pos !== "GK" && FIELD_POSITIONS.indexOf(pos) >= 0; })
       .sort(function(a, b) { return (priorityScore[p.positions[b]]||0) - (priorityScore[p.positions[a]]||0); })
-      .map(function(pos) {
-        var label = p.positions[pos] === "main" ? "주" : p.positions[pos] === "sub" ? "서브" : "백업";
-        return pos + "(" + label + ")";
-      }).join(", ");
-    return "- " + name + ": " + (posEntries || "지정없음");
+      .map(function(pos) { return pos + "(" + priorityLabel[p.positions[pos]] + ")"; });
+    return "- " + name + ": " + (entries.length ? entries.join(", ") : "포지션 무관");
   }).join("\n");
 
-  return (quarterIdx+1) + "쿼터 포지션 배치.\n\n" +
-    "GK(확정): " + gkName + "\n\n" +
-    "필드 선수 10명:\n" + playerDesc + "\n\n" +
-    "규칙:\n" +
-    "1. 위 10명을 LWB,LCB,RCB,RWB,DM1,DM2,CAM,LW,ST,RW에 1명씩 배치\n" +
-    "2. 중복 배치 절대 불가\n" +
-    "3. 포지션 우선순위: 주 > 서브 > 백업\n\n" +
-    "JSON만 응답:\n" +
-    '{"LWB":"이름","LCB":"이름","RCB":"이름","RWB":"이름","DM1":"이름","DM2":"이름","CAM":"이름","LW":"이름","ST":"이름","RW":"이름","reasoning":"한줄설명"}';
+  // 포지션별 가능 선수 목록 (주 우선)
+  var posDesc = FIELD_POSITIONS.map(function(pos) {
+    var main_p = fieldPlayers.filter(function(name) {
+      var p = PLAYERS.filter(function(pl) { return pl.name === name; })[0];
+      return p && p.positions[pos] === "main";
+    });
+    var sub_p = fieldPlayers.filter(function(name) {
+      var p = PLAYERS.filter(function(pl) { return pl.name === name; })[0];
+      return p && p.positions[pos] === "sub";
+    });
+    var bak_p = fieldPlayers.filter(function(name) {
+      var p = PLAYERS.filter(function(pl) { return pl.name === name; })[0];
+      return p && p.positions[pos] === "backup";
+    });
+    var parts = [];
+    if (main_p.length) parts.push("주:" + main_p.join(","));
+    if (sub_p.length)  parts.push("서브:" + sub_p.join(","));
+    if (bak_p.length)  parts.push("백업:" + bak_p.join(","));
+    return pos + " → " + (parts.length ? parts.join(" / ") : "해당없음(임의배치)");
+  }).join("\n");
+
+  return (quarterIdx+1) + "쿼터 4-2-3-1 포지션 배치\n\n" +
+    "■ GK(확정): " + gkName + "\n\n" +
+    "■ 필드 선수 10명 (각자 가능 포지션):\n" + playerDesc + "\n\n" +
+    "■ 포지션별 가능 선수:\n" + posDesc + "\n\n" +
+    "■ 배치 규칙:\n" +
+    "1. 위 10명을 LWB,LCB,RCB,RWB,DM1,DM2,CAM,LW,ST,RW에 1명씩 반드시 배치\n" +
+    "2. 한 선수는 딱 1개 포지션에만 (중복 절대 불가)\n" +
+    "3. 포지션 우선순위 엄수: 주 포지션 선수가 있으면 반드시 우선 배치\n" +
+    "4. 주 포지션 선수 없으면 서브, 서브도 없으면 백업, 그것도 없으면 최선 선택\n" +
+    "5. 모든 10개 포지션 반드시 채울 것\n\n" +
+    "■ JSON만 응답 (다른 텍스트 없이):\n" +
+    '{"LWB":"이름","LCB":"이름","RCB":"이름","RWB":"이름","DM1":"이름","DM2":"이름","CAM":"이름","LW":"이름","ST":"이름","RW":"이름","reasoning":"배치 이유 한두줄"}';
 }
 
 // ===================== Gemini API 호출 =====================
