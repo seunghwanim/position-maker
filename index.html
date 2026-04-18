@@ -231,7 +231,7 @@
 <body>
 
 <h1>⚽ 인사FC 포지션 메이커</h1>
-<p class="subtitle">4-2-3-1 포메이션 · AI 자동 배치 · 균등 출전 · ver 0.9</p>
+<p class="subtitle">4-2-3-1 포메이션 · AI 자동 배치 · 균등 출전 · ver 0.91</p>
 
 <!-- API Key -->
 <div class="api-section">
@@ -655,7 +655,13 @@ async function generateFormation() {
         result = await callGemini(prompt);
         result.GK = qLineup.gk;
         if (!checkDuplicates(result)) break;
-        if (attempt === 2) throw new Error((q+1) + "쿼터 중복 배치 해결 실패. 다시 시도해주세요.");
+        if (attempt === 2) {
+          // AI 실패 시 그리디 초안으로 폴백
+          var draftResult = greedyAssign(qLineup.fieldPlayers);
+          draftResult.GK = qLineup.gk;
+          draftResult.reasoning = "AI 배치 실패로 코드 초안 사용";
+          result = draftResult;
+        }
       }
       allQuarterResults.push({ quarter: q+1, lineup: result, reasoning: result.reasoning || "" });
     }
