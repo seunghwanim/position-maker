@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>⚽ 포지션 메이커 v1</title>
+  <title>⚽ 포지션 메이커</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -377,63 +377,69 @@ function getSelectedPlayers() {
 
 // ===================== 출전 배정 계산 =====================
 function calcAssignment(selectedNames) {
-  // 1. GK 확정 (순서대로, 없으면 순환)
+  // 1. GK 확정
   var availableGKs = GK_ROTATION.filter(function(gk) { return selectedNames.indexOf(gk) >= 0; });
   var gkByQuarter = [0,1,2,3].map(function(q) { return availableGKs[q % availableGKs.length]; });
 
-  // GK 담당 횟수
   var gkCount = {};
   selectedNames.forEach(function(n) { gkCount[n] = 0; });
   gkByQuarter.forEach(function(name) { gkCount[name]++; });
 
   // 2. 필드 출전 횟수 확정
-  // 필드 40자리를 n명으로 나눔
   var n = selectedNames.length;
   var base = Math.floor(40 / n);
   var extra = 40 % n;
 
-  // extra 자리: GK 담당자 우선, 나머지는 랜덤
-  var gkPlayers = selectedNames.filter(function(p) { return gkCount[p] > 0; });
+  // extra 자리: 비GK 중 랜덤 배정 (GK 담당자는 GK 뛰는 만큼 이미 총 출전에 포함)
   var nonGkPlayers = selectedNames.filter(function(p) { return gkCount[p] === 0; });
-  // nonGK 섞기 (랜덤)
+  // 셔플
   for (var i = nonGkPlayers.length - 1; i > 0; i--) {
     var j = Math.floor(Math.random() * (i + 1));
     var tmp = nonGkPlayers[i]; nonGkPlayers[i] = nonGkPlayers[j]; nonGkPlayers[j] = tmp;
   }
-  var extraOrder = gkPlayers.concat(nonGkPlayers);
-
-  var fieldQuota = {};
-  selectedNames.forEach(function(p) { fieldQuota[p] = base; });
+  var extraWinners = {};
   for (var i = 0; i < extra; i++) {
-    var name = extraOrder[i];
-    var maxField = 4 - gkCount[name];
-    if (fieldQuota[name] < maxField) fieldQuota[name]++;
+    if (nonGkPlayers[i]) extraWinners[nonGkPlayers[i]] = true;
   }
 
-  // 3. 쿼터별 필드 10명 확정
-  // remaining 카운트다운 방식
+  var fieldQuota = {};
+  selectedNames.forEach(function(p) {
+    var t = base + (extraWinners[p] ? 1 : 0);
+    fieldQuota[p] = Math.min(t, 4 - gkCount[p]);
+  });
+
+  // 3. 쿼터별 필드 10명 확정 (긴박도 기반 배정)
   var remaining = {};
   selectedNames.forEach(function(p) { remaining[p] = fieldQuota[p]; });
-
-  var quarterLineups = []; // 각 쿼터별 {gk, fieldPlayers}
+  var quarterLineups = [];
 
   for (var q = 0; q < 4; q++) {
     var gk = gkByQuarter[q];
-    // GK 제외, remaining > 0인 사람 우선
-    var candidates = selectedNames.filter(function(p) { return p !== gk; });
-    // remaining 적은 사람 우선 (못 뛸 위기인 사람 먼저)
-    // 단, remaining=0이면 뒤로
+    var candidates = selectedNames.filter(function(p) { return p !== gk && remaining[p] > 0; });
+
+    // 긴박도 = remaining / 앞으로 뛸 수 있는 쿼터 수
     candidates.sort(function(a, b) {
-      var aLeft = remaining[a]; var bLeft = remaining[b];
-      if (aLeft === 0 && bLeft === 0) return 0;
-      if (aLeft === 0) return 1;
-      if (bLeft === 0) return -1;
-      // 남은 쿼터 대비 remaining 비율로 정렬 (긴박한 순)
-      var qLeft = 4 - q;
-      return (bLeft / qLeft) - (aLeft / qLeft);
+      var aFuture = 0, bFuture = 0;
+      for (var fq = q; fq < 4; fq++) {
+        if (gkByQuarter[fq] !== a) aFuture++;
+        if (gkByQuarter[fq] !== b) bFuture++;
+      }
+      var aUrg = aFuture > 0 ? remaining[a] / aFuture : 0;
+      var bUrg = bFuture > 0 ? remaining[b] / bFuture : 0;
+      return bUrg - aUrg;
     });
+
     var fieldPlayers = candidates.slice(0, 10);
-    fieldPlayers.forEach(function(p) { remaining[p]--; });
+
+    // 10명 미달 시 remaining=0인 사람으로 채움
+    if (fieldPlayers.length < 10) {
+      var extras = selectedNames.filter(function(p) {
+        return p !== gk && fieldPlayers.indexOf(p) < 0;
+      });
+      fieldPlayers = fieldPlayers.concat(extras.slice(0, 10 - fieldPlayers.length));
+    }
+
+    fieldPlayers.forEach(function(p) { if (remaining[p] > 0) remaining[p]--; });
     quarterLineups.push({ gk: gk, fieldPlayers: fieldPlayers });
   }
 
