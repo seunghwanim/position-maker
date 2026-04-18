@@ -499,7 +499,9 @@ async function callGemini(prompt) {
               data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
               data.candidates[0].content.parts[0].text) || "";
   // 코드펜스 제거 후 JSON 추출
+  console.log("RAW TEXT:", JSON.stringify(text));
   var clean = text.replace(/```[a-z]*\n?/gi, "").replace(/```/g, "").trim();
+  console.log("CLEAN:", JSON.stringify(clean));
   try {
     return JSON.parse(clean);
   } catch(e) {
