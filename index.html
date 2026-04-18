@@ -375,57 +375,74 @@ function getSelectedPlayers() {
   return Array.from(document.querySelectorAll(".player-chip input:checked")).map(function(i) { return i.value; });
 }
 
-// ===================== 출전 쿼터 수 계산 =====================
-// GK 담당 쿼터를 제외하고 각 선수가 몇 쿼터 필드에 나와야 하는지 계산
-function calcTargetFieldQuarters(selectedNames) {
+// ===================== 출전 배정 계산 (코드가 직접 확정) =====================
+function calcAssignment(selectedNames) {
   var availableGKs = GK_ROTATION.filter(function(gk) { return selectedNames.indexOf(gk) >= 0; });
-  var gkAssignment = [0,1,2,3].map(function(q) { return availableGKs[q % availableGKs.length]; });
+  // GK 쿼터 배정
+  var gkByQuarter = [0,1,2,3].map(function(q) { return availableGKs[q % availableGKs.length]; });
 
-  // 각 선수가 GK로 뛰는 쿼터 수
+  // 각 선수 GK 횟수
   var gkCount = {};
   selectedNames.forEach(function(n) { gkCount[n] = 0; });
-  gkAssignment.forEach(function(name) { gkCount[name]++; });
+  gkByQuarter.forEach(function(name) { gkCount[name]++; });
 
-  // 필드 슬롯: 4쿼터 * 10명 = 40
-  var fieldSlots = 40;
+  // 필드 슬롯 40개를 선수들에게 배분
+  // GK 담당자는 최대 (4 - gkCount)쿼터만 필드 가능
   var n = selectedNames.length;
-
-  // 각 선수가 뛸 수 있는 최대 필드 쿼터 = 4 - GK쿼터수
-  // 가능한 한 균등하게 배분: floor(40/n) 또는 ceil(40/n)
+  var fieldSlots = 40;
   var base = Math.floor(fieldSlots / n);
-  var extra = fieldSlots - base * n; // extra명은 1쿼터 더 뜀
+  var extra = fieldSlots - base * n;
 
-  // GK 담당자는 GK쿼터만큼 필드 쿼터가 줄어드므로 우선 extra 배정
-  // 정렬: GK 많이 뛰는 사람 먼저 extra 배정 (필드 쿼터 손해 보전)
-  var sorted = selectedNames.slice().sort(function(a, b) {
-    return gkCount[b] - gkCount[a];
-  });
-
-  var target = {};
+  // 비GK 선수 우선으로 extra 배정
+  var sorted = selectedNames.slice().sort(function(a, b) { return gkCount[a] - gkCount[b]; });
+  var fieldTarget = {};
   sorted.forEach(function(name, i) {
-    var idealField = (i < extra) ? base + 1 : base;
-    // GK 뛰는 쿼터는 필드 못 뛰므로, 실제 필드 목표는 idealField에서 GK쿼터 빼지 않음
-    // (GK쿼터는 별도이므로 필드 목표 그대로)
-    target[name] = Math.min(idealField, 4 - gkCount[name]); // 최대 4-GK쿼터
+    var t = (i < extra) ? base + 1 : base;
+    fieldTarget[name] = Math.min(t, 4 - gkCount[name]);
   });
 
-  return { target: target, gkAssignment: gkAssignment, gkCount: gkCount };
+  // 부족분 보정
+  var total = selectedNames.reduce(function(s, n) { return s + fieldTarget[n]; }, 0);
+  var remaining = fieldSlots - total;
+  if (remaining > 0) {
+    sorted.forEach(function(name) {
+      if (remaining <= 0) return;
+      if (fieldTarget[name] < 4 - gkCount[name]) { fieldTarget[name]++; remaining--; }
+    });
+  }
+
+  // 각 선수별로 어느 쿼터에 필드/GK/벤치인지 확정
+  // 방법: 선수별로 GK 아닌 쿼터 목록에서 앞에서부터 fieldTarget 수만큼 필드 배정, 나머지는 벤치
+  var schedule = {}; // name -> [0,1,2,3] 각 쿼터 "field"/"gk"/"bench"
+  selectedNames.forEach(function(name) {
+    var q_schedule = ["bench","bench","bench","bench"];
+    // GK 쿼터 먼저 확정
+    gkByQuarter.forEach(function(gkName, q) {
+      if (gkName === name) q_schedule[q] = "gk";
+    });
+    // 나머지 쿼터 중 앞에서부터 fieldTarget 수만큼 필드
+    var nonGKQuarters = [0,1,2,3].filter(function(q) { return q_schedule[q] !== "gk"; });
+    for (var i = 0; i < fieldTarget[name]; i++) {
+      q_schedule[nonGKQuarters[i]] = "field";
+    }
+    schedule[name] = q_schedule;
+  });
+
+  return { gkByQuarter: gkByQuarter, fieldTarget: fieldTarget, schedule: schedule, gkCount: gkCount };
 }
 
-// ===================== 프롬프트 빌더 =====================
-function buildPrompt(selectedNames) {
-  var selected = PLAYERS.filter(function(p) { return selectedNames.indexOf(p.name) >= 0; });
-  var totalPlayers = selected.length;
-
-  var calc = calcTargetFieldQuarters(selectedNames);
-  var target = calc.target;
-  var gkAssignment = calc.gkAssignment;
-  var gkCount = calc.gkCount;
+// ===================== 쿼터별 프롬프트 빌더 =====================
+function buildQuarterPrompt(selectedNames, quarterIdx, assignment) {
+  var gkName = assignment.gkByQuarter[quarterIdx];
+  // 이번 쿼터에 필드에 나올 선수 목록
+  var fieldPlayers = selectedNames.filter(function(name) {
+    return assignment.schedule[name][quarterIdx] === "field";
+  });
 
   var priorityScore = { main: 3, sub: 2, backup: 1 };
-
-  // 선수별 설명 + 목표 필드 쿼터 수 명시
-  var playerDescriptions = selected.map(function(p) {
+  var playerDescriptions = fieldPlayers.map(function(name) {
+    var p = PLAYERS.filter(function(pl) { return pl.name === name; })[0];
+    if (!p) return "- " + name + ": 정보없음";
     var posEntries = Object.keys(p.positions)
       .filter(function(pos) { return p.positions[pos] !== null && pos !== "GK"; })
       .sort(function(a, b) { return (priorityScore[p.positions[b]] || 0) - (priorityScore[p.positions[a]] || 0); })
@@ -434,66 +451,21 @@ function buildPrompt(selectedNames) {
         var label = val === "main" ? "주" : val === "sub" ? "서브" : "백업";
         return pos + "(" + label + ")";
       }).join(", ");
-    var gkIdx = GK_ROTATION.indexOf(p.name);
-    var isGK = p.positions.GK === "main";
-    var gkNote = isGK ? " [GK가능, " + (gkIdx+1) + "쿼터GK담당]" : "";
-    var fieldTarget = target[p.name];
-    var gkQ = gkCount[p.name]; // GK 뛰는 쿼터 수
-    var restCount = 4 - gkQ - fieldTarget;
-    var totalNote = gkQ > 0
-      ? " [GK " + gkQ + "쿼터 + 필드 " + fieldTarget + "쿼터 = 총 " + (gkQ + fieldTarget) + "쿼터 출전]"
-      : " [필드 " + fieldTarget + "쿼터 출전]";
-    var restNote = restCount > 0 ? " (벤치 " + restCount + "쿼터)" : "";
-    return "- " + p.name + gkNote + totalNote + restNote + " | 가능포지션: " + (posEntries || "지정없음");
+    return "- " + name + ": " + (posEntries || "지정없음");
   }).join("\n");
 
-  // 쿼터별 출전 제약표 - 벤치 쿼터까지 명시
-  // 필드 목표 쿼터를 채우고 남는 건 벤치(R)
-  // 벤치 배정: GK 없는 쿼터 중 뒤쪽 쿼터부터 벤치
-  var quarterTable = "선수명 | 1Q | 2Q | 3Q | 4Q | 필드합계\n";
-  quarterTable += "-------|----|----|----|----|--------\n";
-  selected.forEach(function(p) {
-    var fieldTarget2 = target[p.name];
-    var restNeeded = 4 - gkCount[p.name] - fieldTarget2;
-    // GK 아닌 쿼터들 중 뒤에서부터 벤치 배정
-    var nonGKQuarters = [0,1,2,3].filter(function(q) { return gkAssignment[q] !== p.name; });
-    var benchQuarters = nonGKQuarters.slice(nonGKQuarters.length - restNeeded);
-    var row = p.name + " |";
-    for (var q = 0; q < 4; q++) {
-      if (gkAssignment[q] === p.name) row += " GK |";
-      else if (benchQuarters.indexOf(q) >= 0) row += " 벤치|";
-      else row += " 필드|";
-    }
-    row += " " + fieldTarget2 + "쿼터";
-    quarterTable += row + "\n";
-  });
-
-  var gkSchedule = [0,1,2,3].map(function(q) {
-    return "  " + (q+1) + "쿼터 GK: " + gkAssignment[q];
-  }).join("\n");
-
-  return "당신은 풋살 포지션 배치 전문가입니다. 4쿼터 전체 포지션을 한 번에 짜주세요.\n\n" +
-    "## 포메이션\n4-2-3-1 (총 11명/쿼터)\n포지션: GK, LWB, LCB, RCB, RWB, DM1, DM2, CAM, LW, ST, RW\n\n" +
-    "## 골키퍼 쿼터 배정 (절대 변경 불가)\n" + gkSchedule + "\n\n" +
-    "## 선수별 필드 출전 목표\n" + playerDescriptions + "\n\n" +
-    "## 쿼터별 출전 제약표 (GK=골키퍼, ?=AI가 필드 or 벤치 결정)\n" + quarterTable + "\n" +
+  return (quarterIdx+1) + "쿼터 포지션 배치를 해주세요.\n\n" +
+    "## 포메이션\n4-2-3-1 (필드 10명 + GK 1명)\n" +
+    "포지션: LWB, LCB, RCB, RWB, DM1, DM2, CAM, LW, ST, RW\n\n" +
+    "## 이번 쿼터 GK (확정, 변경 불가)\nGK: " + gkName + "\n\n" +
+    "## 이번 쿼터 필드 출전 선수 " + fieldPlayers.length + "명\n" + playerDescriptions + "\n\n" +
     "## 배치 규칙\n" +
-    "1. 각 쿼터 GK는 위 배정표를 반드시 따를 것\n" +
-    "2. 각 선수는 쿼터당 정확히 1개 포지션에만 배치 (한 쿼터에 같은 선수 중복 절대 불가)\n" +
+    "1. 위 필드 선수 " + fieldPlayers.length + "명을 LWB, LCB, RCB, RWB, DM1, DM2, CAM, LW, ST, RW 10개 포지션에 1명씩 배치\n" +
+    "2. 각 선수는 정확히 1개 포지션에만 배치 (중복 불가)\n" +
     "3. 포지션 우선순위: 주 > 서브 > 백업\n" +
-    "4. 모든 11개 포지션이 매 쿼터 반드시 채워져야 함\n\n" +
-    "## 출전 제약 (위 표를 그대로 따를 것)\n" +
-    "- 위 표에서 [필드]로 표시된 칸: 해당 선수를 반드시 그 쿼터 필드에 배치\n" +
-    "- 위 표에서 [GK]로 표시된 칸: 해당 선수는 GK로만 출전, 필드 배치 금지\n" +
-    "- 위 표에서 [벤치]로 표시된 칸: 해당 선수는 그 쿼터에 출전 불가\n" +
-    "- 한 쿼터에 같은 선수가 두 포지션에 나오면 절대 안 됨\n\n" +
-    "## 응답 형식\n반드시 아래 JSON만 응답 (다른 텍스트 없이):\n\n" +
-    '{\n  "quarters": [\n' +
-    '    { "quarter": 1, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } },\n' +
-    '    { "quarter": 2, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } },\n' +
-    '    { "quarter": 3, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } },\n' +
-    '    { "quarter": 4, "lineup": { "GK": "이름", "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름" } }\n' +
-    '  ],\n  "reasoning": "배치 전략 및 출전 균형에 대한 2-3줄 설명"\n}';
+    "4. 모든 10개 포지션이 반드시 채워져야 함\n\n" +
+    "## 응답 형식\n반드시 아래 JSON만 응답:\n" +
+    '{ "LWB": "이름", "LCB": "이름", "RCB": "이름", "RWB": "이름", "DM1": "이름", "DM2": "이름", "CAM": "이름", "LW": "이름", "ST": "이름", "RW": "이름", "reasoning": "한 줄 설명" }';
 }
 
 // ===================== Gemini API 호출 =====================
@@ -509,10 +481,10 @@ async function callGemini(prompt) {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 8192,
-          thinkingConfig: { thinkingBudget: 1024 }
-         }   
+          temperature: 0.3,
+          maxOutputTokens: 1024,
+          thinkingConfig: { thinkingBudget: 512 }
+        }
       })
     }
   );
@@ -526,18 +498,21 @@ async function callGemini(prompt) {
   var text = (data.candidates && data.candidates[0] && data.candidates[0].content &&
               data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
               data.candidates[0].content.parts[0].text) || "";
-  console.log("=== Gemini 원본 응답 ===", text);
   var clean = text.replace(/^```[a-z]*\n?/i, "").replace(/```$/, "").trim();
   try {
     return JSON.parse(clean);
   } catch(e) {
-    console.log("=== 파싱 실패, 정규식 시도 ===", clean);
     var match = clean.match(/\{[\s\S]*\}/);
-    if (match) {
-      try { return JSON.parse(match[0]); } catch(e2) { console.log("정규식도 실패:", match[0]); }
-    }
-    throw new Error("AI 응답을 파싱할 수 없습니다. 다시 시도해주세요.");
+    if (match) { try { return JSON.parse(match[0]); } catch(e2) {} }
+    throw new Error("AI 응답 파싱 실패. 다시 시도해주세요.");
   }
+}
+
+// ===================== 중복 선수 검증 =====================
+function checkDuplicates(lineup) {
+  var names = Object.values(lineup).filter(function(v) { return v !== undefined; });
+  var unique = names.filter(function(v, i) { return names.indexOf(v) === i; });
+  return unique.length !== names.length;
 }
 
 // ===================== 메인: 생성 =====================
@@ -557,35 +532,30 @@ async function generateFormation() {
   document.getElementById("quartersNav").style.display = "none";
   document.getElementById("pitchWrapper").style.display = "none";
   document.getElementById("generateBtn").disabled = true;
-  document.getElementById("loadingStep").textContent = "4쿼터 동시 분석 중...";
+
+  // 코드가 직접 출전 배정 확정
+  var assignment = calcAssignment(selected);
+  allQuarterResults = [];
 
   try {
-    var prompt = buildPrompt(selected);
-    var result = null;
+    for (var q = 0; q < 4; q++) {
+      document.getElementById("loadingStep").textContent = (q+1) + "쿼터 배치 중...";
+      var prompt = buildQuarterPrompt(selected, q, assignment);
+      var result = null;
 
-    // 중복 선수 없을 때까지 최대 3번 재시도
-    for (var attempt = 0; attempt < 3; attempt++) {
-      if (attempt > 0) {
-        document.getElementById("loadingStep").textContent = "중복 감지, 재시도 중... (" + attempt + "/3)";
+      // 중복 없을 때까지 최대 3번 재시도
+      for (var attempt = 0; attempt < 3; attempt++) {
+        result = await callGemini(prompt);
+        result.GK = assignment.gkByQuarter[q]; // GK는 코드가 확정
+        if (!checkDuplicates(result)) break;
+        if (attempt === 2) throw new Error((q+1) + "쿼터 중복 선수 배치 해결 실패. 다시 시도해주세요.");
       }
-      result = await callGemini(prompt);
-      var dupError = checkDuplicates(result.quarters);
-      if (!dupError) break;
-      if (attempt === 2) {
-        throw new Error("중복 선수 배치를 3번 시도했으나 해결되지 않았습니다. 다시 시도해주세요.");
-      }
+      allQuarterResults.push({ quarter: q+1, lineup: result, reasoning: result.reasoning || "" });
     }
-
-    allQuarterResults = result.quarters;
 
     renderQuarterTabs();
-    renderPlaytimeTable(selected);
+    renderPlaytimeTable(selected, assignment);
     showQuarter(0);
-
-    if (result.reasoning) {
-      document.getElementById("reasoningText").textContent = result.reasoning;
-      document.getElementById("reasoningBox").style.display = "block";
-    }
 
     document.getElementById("quartersNav").style.display = "flex";
     document.getElementById("pitchWrapper").style.display = "block";
@@ -595,20 +565,6 @@ async function generateFormation() {
     document.getElementById("loading").style.display = "none";
     document.getElementById("generateBtn").disabled = false;
   }
-}
-
-// ===================== 중복 선수 검증 =====================
-function checkDuplicates(quarters) {
-  for (var i = 0; i < quarters.length; i++) {
-    var lineup = quarters[i].lineup;
-    var names = Object.values(lineup);
-    var unique = names.filter(function(v, idx) { return names.indexOf(v) === idx; });
-    if (unique.length !== names.length) {
-      var dups = names.filter(function(v, idx) { return names.indexOf(v) !== idx; });
-      return (i+1) + "쿼터에 중복 선수: " + dups.join(", ");
-    }
-  }
-  return null; // 문제 없음
 }
 
 // ===================== 쿼터 탭 =====================
@@ -624,7 +580,14 @@ function showQuarter(idx) {
   document.querySelectorAll(".quarter-tab").forEach(function(tab) {
     tab.classList.toggle("active", parseInt(tab.dataset.q) === idx);
   });
-  renderPitch(allQuarterResults[idx].lineup);
+  var qr = allQuarterResults[idx];
+  renderPitch(qr.lineup);
+  if (qr.reasoning) {
+    document.getElementById("reasoningText").textContent = qr.reasoning;
+    document.getElementById("reasoningBox").style.display = "block";
+  } else {
+    document.getElementById("reasoningBox").style.display = "none";
+  }
 }
 
 // ===================== 피치 렌더링 =====================
@@ -649,33 +612,22 @@ function renderPitch(lineup) {
 }
 
 // ===================== 출전 현황 테이블 =====================
-function renderPlaytimeTable(selectedNames) {
-  var stats = {};
-  selectedNames.forEach(function(name) { stats[name] = { fieldQ: [], gkQ: [] }; });
-
-  allQuarterResults.forEach(function(qr, qi) {
-    Object.keys(qr.lineup).forEach(function(pos) {
-      var name = qr.lineup[pos];
-      if (!stats[name]) return;
-      if (pos === "GK") stats[name].gkQ.push(qi + 1);
-      else              stats[name].fieldQ.push(qi + 1);
-    });
-  });
-
+function renderPlaytimeTable(selectedNames, assignment) {
   var html =
     '<div class="hdr pname">선수</div>' +
     '<div class="hdr">1Q</div><div class="hdr">2Q</div><div class="hdr">3Q</div><div class="hdr">4Q</div>' +
     '<div class="hdr">필드</div>';
 
   selectedNames.forEach(function(name) {
-    var s = stats[name];
+    var sched = assignment.schedule[name]; // ["field","gk","bench","field"] 등
     html += '<div class="pname">' + name + '</div>';
-    for (var q = 1; q <= 4; q++) {
-      if (s.gkQ.indexOf(q) >= 0)        html += '<div class="cell gk-q">GK</div>';
-      else if (s.fieldQ.indexOf(q) >= 0) html += '<div class="cell played">●</div>';
-      else                               html += '<div class="cell resting">–</div>';
+    var fieldCount = 0;
+    for (var q = 0; q < 4; q++) {
+      if (sched[q] === "gk")    html += '<div class="cell gk-q">GK</div>';
+      else if (sched[q] === "field") { html += '<div class="cell played">●</div>'; fieldCount++; }
+      else                           html += '<div class="cell resting">–</div>';
     }
-    html += '<div class="cell"><span class="total-chip">' + s.fieldQ.length + 'Q</span></div>';
+    html += '<div class="cell"><span class="total-chip">' + fieldCount + 'Q</span></div>';
   });
 
   document.getElementById("playtimeGrid").innerHTML = html;
