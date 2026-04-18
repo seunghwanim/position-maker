@@ -380,16 +380,16 @@ function calcAssignment(selectedNames) {
   var availableGKs = GK_ROTATION.filter(function(gk) { return selectedNames.indexOf(gk) >= 0; });
   var gkByQuarter = [0,1,2,3].map(function(q) { return availableGKs[q % availableGKs.length]; });
 
+  // GK 횟수 카운트
   var gkCount = {};
   selectedNames.forEach(function(n) { gkCount[n] = 0; });
   gkByQuarter.forEach(function(name) { gkCount[name]++; });
 
   var n = selectedNames.length;
-  var fieldSlots = 40;
-  var base = Math.floor(fieldSlots / n);
-  var extra = fieldSlots % n;
+  var base = Math.floor(40 / n);
+  var extra = 40 % n;
 
-  // GK 담당자 우선으로 extra 배정 (GK 뛰는 쿼터 손해 보전)
+  // GK 담당자 우선으로 extra 배정
   var sorted = selectedNames.slice().sort(function(a, b) { return gkCount[b] - gkCount[a]; });
   var fieldTarget = {};
   sorted.forEach(function(name, i) {
@@ -397,68 +397,35 @@ function calcAssignment(selectedNames) {
     fieldTarget[name] = Math.min(t, 4 - gkCount[name]);
   });
 
-  // 합계 40 안 되면 비GK에게 추가 배분
-  var total = selectedNames.reduce(function(s, n) { return s + fieldTarget[n]; }, 0);
-  var remaining = fieldSlots - total;
-  if (remaining > 0) {
-    var byNonGK = selectedNames.slice().sort(function(a, b) { return gkCount[a] - gkCount[b]; });
-    byNonGK.forEach(function(name) {
-      if (remaining <= 0) return;
-      if (fieldTarget[name] < 4 - gkCount[name]) {
-        fieldTarget[name]++;
-        remaining--;
-      }
-    });
-  }
+  // 부족분 비GK에게 보충
+  var remaining = 40 - selectedNames.reduce(function(s, n) { return s + fieldTarget[n]; }, 0);
+  var byNonGK = selectedNames.slice().sort(function(a, b) { return gkCount[a] - gkCount[b]; });
+  byNonGK.forEach(function(name) {
+    if (remaining <= 0) return;
+    if (fieldTarget[name] < 4 - gkCount[name]) { fieldTarget[name]++; remaining--; }
+  });
 
-  // 스케줄 초기화
+  // 스케줄 초기화 & GK 확정
   var schedule = {};
-  selectedNames.forEach(function(name) {
-    schedule[name] = ["bench","bench","bench","bench"];
-  });
-  // GK 쿼터 확정
-  gkByQuarter.forEach(function(gkName, q) {
-    schedule[gkName][q] = "gk";
-  });
+  selectedNames.forEach(function(name) { schedule[name] = [null, null, null, null]; });
+  gkByQuarter.forEach(function(gkName, q) { schedule[gkName][q] = "gk"; });
 
-  // 각 선수별로 벤치 횟수 균등하게 분산하면서 fieldTarget 채우기
-  // 방법: 쿼터 순서대로, 벤치 횟수 적은 사람 먼저 벤치 배정
-  var benchCount = {};
-  selectedNames.forEach(function(n) { benchCount[n] = 0; });
-  var assignedField = {};
-  selectedNames.forEach(function(n) { assignedField[n] = 0; });
+  // 쿼터별로 fieldLeft 많은 사람 우선 필드 배정 → 매 쿼터 10명 보장
+  var fieldLeft = {};
+  selectedNames.forEach(function(name) { fieldLeft[name] = fieldTarget[name]; });
 
   for (var q = 0; q < 4; q++) {
-    var gk = gkByQuarter[q];
-    var eligible = selectedNames.filter(function(name) { return name !== gk; });
-    // 이 쿼터 벤치 인원 = eligible 중 fieldTarget 이미 채운 사람 + 추가 벤치 필요한 만큼
-    // 필드 목표 채운 사람은 자동 벤치
-    var mustBench = eligible.filter(function(name) { return assignedField[name] >= fieldTarget[name]; });
-    var canPlay = eligible.filter(function(name) { return assignedField[name] < fieldTarget[name]; });
-    // 필드 자리 = 10, mustBench 이후 남은 자리 채움
-    var fieldNeeded = 10 - (eligible.length - canPlay.length - mustBench.length);
-    // canPlay 중 벤치 적은 순으로 fieldNeeded명 필드, 나머지 벤치
-    canPlay.sort(function(a, b) { return benchCount[b] - benchCount[a]; }); // 벤치 많은 사람이 뒤로
-    var benchFromCanPlay = canPlay.length - Math.min(canPlay.length, 10 - mustBench.length);
-    // 실제로는 단순하게: eligible 중 fieldTarget 안 채운 사람 중 벤치 많은 순으로 벤치
-    eligible.sort(function(a, b) {
-      // 필드 목표 채운 사람 먼저 벤치
-      var aDone = assignedField[a] >= fieldTarget[a] ? 1 : 0;
-      var bDone = assignedField[b] >= fieldTarget[b] ? 1 : 0;
-      if (aDone !== bDone) return bDone - aDone; // done인 사람 나중에
-      return benchCount[b] - benchCount[a]; // 벤치 많은 사람 먼저 벤치
-    });
-    var benchNeeded = eligible.length - 10;
-    for (var i = 0; i < eligible.length; i++) {
-      var name = eligible[i];
-      if (i < benchNeeded) {
-        schedule[name][q] = "bench";
-        benchCount[name]++;
-      } else {
+    var eligible = selectedNames.filter(function(name) { return schedule[name][q] === null; });
+    // fieldLeft 많은 순 정렬 (급한 사람 먼저)
+    eligible.sort(function(a, b) { return fieldLeft[b] - fieldLeft[a]; });
+    eligible.forEach(function(name, i) {
+      if (i < 10 && fieldLeft[name] > 0) {
         schedule[name][q] = "field";
-        assignedField[name]++;
+        fieldLeft[name]--;
+      } else {
+        schedule[name][q] = "bench";
       }
-    }
+    });
   }
 
   return { gkByQuarter: gkByQuarter, fieldTarget: fieldTarget, schedule: schedule, gkCount: gkCount };
