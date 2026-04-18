@@ -230,7 +230,7 @@
 </head>
 <body>
 
-<h1>⚽ 포지션 메이커</h1>
+<h1>⚽ 인사FC 포지션 메이커</h1>
 <p class="subtitle">4-2-3-1 포메이션 · AI 자동 배치 · 균등 출전</p>
 
 <!-- API Key -->
@@ -376,6 +376,65 @@ function getSelectedPlayers() {
 }
 
 // ===================== 출전 배정 계산 =====================
+var FIELD_POSITIONS = ["LWB","LCB","RCB","RWB","DM1","DM2","CAM","LW","ST","RW"];
+
+function canPlay(name, pos) {
+  var p = PLAYERS.filter(function(pl) { return pl.name === name; })[0];
+  return p && p.positions[pos] != null;
+}
+
+function select10WithCoverage(candidates, remaining, q, gkByQuarter) {
+  // 긴박도 계산
+  function urgency(p) {
+    var future = 0;
+    for (var fq = q; fq < 4; fq++) { if (gkByQuarter[fq] !== p) future++; }
+    return future > 0 ? remaining[p] / future : 0;
+  }
+
+  // 긴박도 순 정렬 후 10명 초안
+  var sorted = candidates.slice().sort(function(a, b) { return urgency(b) - urgency(a); });
+  var chosen = sorted.slice(0, 10);
+
+  // 커버 안 되는 포지션 찾기
+  var uncovered = FIELD_POSITIONS.filter(function(pos) {
+    return !chosen.some(function(p) { return canPlay(p, pos); });
+  });
+
+  if (uncovered.length === 0) return chosen;
+
+  // 커버 안 되는 포지션마다 교체 시도
+  var notChosen = candidates.filter(function(p) { return chosen.indexOf(p) < 0; });
+
+  uncovered.forEach(function(pos) {
+    // 이 포지션 커버 가능한 후보
+    var coverCandidates = notChosen.filter(function(p) { return canPlay(p, pos); });
+    if (coverCandidates.length === 0) return;
+    coverCandidates.sort(function(a, b) { return urgency(b) - urgency(a); });
+    var newPlayer = coverCandidates[0];
+
+    // chosen 중 긴박도 낮은 사람부터 교체 시도 (다른 포지션 커버 안 무너지게)
+    var chosenByUrgency = chosen.slice().sort(function(a, b) { return urgency(a) - urgency(b); });
+    for (var i = 0; i < chosenByUrgency.length; i++) {
+      var oldPlayer = chosenByUrgency[i];
+      var testChosen = chosen.filter(function(p) { return p !== oldPlayer; }).concat([newPlayer]);
+      // 기존에 커버되던 포지션이 무너지지 않는지 확인
+      var ok = FIELD_POSITIONS.every(function(otherPos) {
+        if (otherPos === pos) return true;
+        var wasCovered = chosen.some(function(p) { return canPlay(p, otherPos); });
+        if (!wasCovered) return true;
+        return testChosen.some(function(p) { return canPlay(p, otherPos); });
+      });
+      if (ok) {
+        chosen = testChosen;
+        notChosen = notChosen.filter(function(p) { return p !== newPlayer; }).concat([oldPlayer]);
+        break;
+      }
+    }
+  });
+
+  return chosen;
+}
+
 function calcAssignment(selectedNames) {
   // 1. GK 확정
   var availableGKs = GK_ROTATION.filter(function(gk) { return selectedNames.indexOf(gk) >= 0; });
@@ -390,17 +449,14 @@ function calcAssignment(selectedNames) {
   var base = Math.floor(40 / n);
   var extra = 40 % n;
 
-  // extra 자리: 비GK 중 랜덤 배정 (GK 담당자는 GK 뛰는 만큼 이미 총 출전에 포함)
+  // extra: 비GK 중 랜덤 배정
   var nonGkPlayers = selectedNames.filter(function(p) { return gkCount[p] === 0; });
-  // 셔플
   for (var i = nonGkPlayers.length - 1; i > 0; i--) {
     var j = Math.floor(Math.random() * (i + 1));
     var tmp = nonGkPlayers[i]; nonGkPlayers[i] = nonGkPlayers[j]; nonGkPlayers[j] = tmp;
   }
   var extraWinners = {};
-  for (var i = 0; i < extra; i++) {
-    if (nonGkPlayers[i]) extraWinners[nonGkPlayers[i]] = true;
-  }
+  for (var i = 0; i < extra; i++) { if (nonGkPlayers[i]) extraWinners[nonGkPlayers[i]] = true; }
 
   var fieldQuota = {};
   selectedNames.forEach(function(p) {
@@ -408,7 +464,7 @@ function calcAssignment(selectedNames) {
     fieldQuota[p] = Math.min(t, 4 - gkCount[p]);
   });
 
-  // 3. 쿼터별 필드 10명 확정 (긴박도 기반 배정)
+  // 3. 쿼터별 필드 10명 확정 (포지션 커버리지 보장)
   var remaining = {};
   selectedNames.forEach(function(p) { remaining[p] = fieldQuota[p]; });
   var quarterLineups = [];
@@ -416,20 +472,7 @@ function calcAssignment(selectedNames) {
   for (var q = 0; q < 4; q++) {
     var gk = gkByQuarter[q];
     var candidates = selectedNames.filter(function(p) { return p !== gk && remaining[p] > 0; });
-
-    // 긴박도 = remaining / 앞으로 뛸 수 있는 쿼터 수
-    candidates.sort(function(a, b) {
-      var aFuture = 0, bFuture = 0;
-      for (var fq = q; fq < 4; fq++) {
-        if (gkByQuarter[fq] !== a) aFuture++;
-        if (gkByQuarter[fq] !== b) bFuture++;
-      }
-      var aUrg = aFuture > 0 ? remaining[a] / aFuture : 0;
-      var bUrg = bFuture > 0 ? remaining[b] / bFuture : 0;
-      return bUrg - aUrg;
-    });
-
-    var fieldPlayers = candidates.slice(0, 10);
+    var fieldPlayers = select10WithCoverage(candidates, remaining, q, gkByQuarter);
 
     // 10명 미달 시 remaining=0인 사람으로 채움
     if (fieldPlayers.length < 10) {
